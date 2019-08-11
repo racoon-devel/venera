@@ -3,7 +3,10 @@ package server
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
+
+	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
 
 	"github.com/ccding/go-logging/logging"
 	"github.com/gorilla/mux"
@@ -54,6 +57,25 @@ func setupPanicHandler(next http.Handler) http.Handler {
 	})
 }
 
+func NewTaskHandler(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(r.URL.Path, "/")
+	providerId := parts[len(parts)-1]
+	provider := provider.All()[providerId]
+
+	if r.Method == "POST" {
+		session, err := provider.GetSearchSession(r)
+		if err != nil {
+			webui.ShowError(w, err)
+			return
+		}
+
+		dispatcher.NewTask(session, providerId)
+		http.Redirect(w, r, "/", 300)
+	} else {
+		provider.ShowSearchPage(w)
+	}
+}
+
 // InstanceRouter - creation full HTTP handler, it is useful for tests
 func InstanceRouter(logger *logging.Logger) http.Handler {
 	log = logger
@@ -63,8 +85,8 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	router.HandleFunc("/", webui.MainPageHandler)
 
 	providers := provider.All()
-	for id, ctx := range providers {
-		router.HandleFunc("/task/new/"+id, ctx.NewTaskPageHandler).Methods("GET", "POST")
+	for id, _ := range providers {
+		router.HandleFunc("/task/new/"+id, NewTaskHandler).Methods("GET", "POST")
 	}
 
 	router.Use(setupAccessLog)

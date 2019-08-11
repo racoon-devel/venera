@@ -45,7 +45,10 @@ func main() {
 
 	logger.Debug(utils.Configuration)
 
-	dispatcher.Init(logger)
+	if err := dispatcher.Init(logger); err != nil {
+		logger.Critical(err)
+		os.Exit(1)
+	}
 
 	server.Run(logger)
 }

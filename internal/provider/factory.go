@@ -2,18 +2,13 @@ package provider
 
 import (
 	"fmt"
-	"net/http"
 
 	"racoondev.tk/gitea/racoon/venera/internal/provider/vk"
+	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
 
-// Provider - object for searching people in some social network
-type Provider interface {
-	NewTaskPageHandler(w http.ResponseWriter, r *http.Request)
-}
-
 var (
-	providers = map[string]Provider{
+	providers = map[string]types.Provider{
 		"vk": new(vk.VkProvider),
 	}
 )
@@ -29,7 +24,7 @@ func GetAvailable() []string {
 }
 
 // Get - get provider by id
-func Get(id string) (Provider, error) {
+func Get(id string) (types.Provider, error) {
 	provider := providers[id]
 
 	if provider == nil {
@@ -40,6 +35,6 @@ func Get(id string) (Provider, error) {
 }
 
 // All - get all providers
-func All() map[string]Provider {
+func All() map[string]types.Provider {
 	return providers
 }
