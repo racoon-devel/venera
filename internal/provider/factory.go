@@ -3,13 +3,15 @@ package provider
 import (
 	"fmt"
 
+	"racoondev.tk/gitea/racoon/venera/internal/provider/tinder"
 	"racoondev.tk/gitea/racoon/venera/internal/provider/vk"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
 
 var (
 	providers = map[string]types.Provider{
-		"vk": new(vk.VkProvider),
+		"vk":     new(vk.VkProvider),
+		"tinder": new(tinder.TinderProvider),
 	}
 )
 
