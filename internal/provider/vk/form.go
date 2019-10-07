@@ -110,5 +110,5 @@ func (ctx *VkProvider) GetSearchSession(r *http.Request) (types.SearchSession, e
 		return nil, err
 	}
 
-	return NewSession(settings), nil
+	return createSession(settings), nil
 }

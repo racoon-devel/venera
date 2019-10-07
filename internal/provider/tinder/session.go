@@ -1,6 +1,7 @@
 package tinder
 
 import "encoding/json"
+import "racoondev.tk/gitea/racoon/venera/internal/types"
 
 type tinderSessionState struct {
 	Search searchSettings
@@ -22,6 +23,22 @@ func (ctx *tinderSearchSession) SaveState() string {
 func (ctx *tinderSearchSession) LoadState(state string) error {
 	err := json.Unmarshal([]byte(state), &ctx.state)
 	return err
+}
+
+func (ctx *tinderSearchSession) Start() {
+
+}
+
+func (ctx *tinderSearchSession) Stop() {
+
+}
+
+func (ctx *tinderSearchSession) Reset() {
+
+}
+
+func (ctx *tinderSearchSession) Status() types.SessionStatus {
+	return types.StatusIdle
 }
 
 func NewSession(search *searchSettings) *tinderSearchSession {

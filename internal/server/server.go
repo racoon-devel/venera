@@ -76,6 +76,60 @@ func NewTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func StopTaskHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseUint(vars["task"], 10, 32)
+	if err != nil {
+		webui.ShowError(w, err)
+		return
+	}
+	log.Debugf("Stopping task %d", id)
+
+	err = dispatcher.StopTask(uint(id))
+	if err != nil {
+		webui.ShowError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func DeleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseUint(vars["task"], 10, 32)
+	if err != nil {
+		webui.ShowError(w, err)
+		return
+	}
+	log.Debugf("Deleting task %d", id)
+
+	err = dispatcher.DeleteTask(uint(id))
+	if err != nil {
+		webui.ShowError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func SuspendTaskHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseUint(vars["task"], 10, 32)
+	if err != nil {
+		webui.ShowError(w, err)
+		return
+	}
+	log.Debugf("Suspending task %d", id)
+
+	err = dispatcher.SuspendTask(uint(id))
+	if err != nil {
+		webui.ShowError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 // InstanceRouter - creation full HTTP handler, it is useful for tests
 func InstanceRouter(logger *logging.Logger) http.Handler {
 	log = logger
@@ -88,6 +142,10 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	for id, _ := range providers {
 		router.HandleFunc("/task/new/"+id, NewTaskHandler).Methods("GET", "POST")
 	}
+
+	router.HandleFunc("/task/stop/{task}", StopTaskHandler).Methods("GET")
+	router.HandleFunc("/task/delete/{task}", DeleteTaskHandler).Methods("GET")
+	router.HandleFunc("/task/pause/{task}", SuspendTaskHandler).Methods("GET")
 
 	router.Use(setupAccessLog)
 	router.Use(setupAccess)
