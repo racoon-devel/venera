@@ -79,51 +79,48 @@ func Describe() []TaskInfo {
 	return tasks
 }
 
-func StopTask(taskId uint) error {
+func taskAction(taskID uint, handler func(task *Task)) error {
 	dispatcher.mutex.Lock()
 	defer dispatcher.mutex.Unlock()
 
-	task, ok := dispatcher.tasks[taskId]
+	task, ok := dispatcher.tasks[taskID]
 	if !ok {
-		return fmt.Errorf("Task not found: %d", taskId)
+		return fmt.Errorf("Task not found: %d", taskID)
 	}
 
-	task.Stop()
-	dispatcher.db.Update(&task)
-	dispatcher.log.Infof("Task #%d stopped", taskId)
-
+	handler(&task)
 	return nil
 }
 
-func DeleteTask(taskId uint) error {
-	dispatcher.mutex.Lock()
-	defer dispatcher.mutex.Unlock()
-
-	task, ok := dispatcher.tasks[taskId]
-	if !ok {
-		return fmt.Errorf("Task not found: %d", taskId)
-	}
-
-	task.Stop()
-	delete(dispatcher.tasks, taskId)
-	dispatcher.db.Delete(&task)
-
-	dispatcher.log.Infof("Task #%d deleted", taskId)
-	return nil
+func StopTask(taskID uint) error {
+	return taskAction(taskID, func(task *Task) {
+		task.Stop()
+		dispatcher.db.Update(&task)
+		dispatcher.log.Infof("Task #%d stopped", taskID)
+	})
 }
 
-func SuspendTask(taskId uint) error {
-	dispatcher.mutex.Lock()
-	defer dispatcher.mutex.Unlock()
+func DeleteTask(taskID uint) error {
+	return taskAction(taskID, func(task *Task) {
+		task.Stop()
+		delete(dispatcher.tasks, taskID)
+		dispatcher.db.Delete(&task)
+		dispatcher.log.Infof("Task #%d deleted", taskID)
+	})
+}
 
-	task, ok := dispatcher.tasks[taskId]
-	if !ok {
-		return fmt.Errorf("Task not found: %d", taskId)
-	}
+func SuspendTask(taskID uint) error {
+	return taskAction(taskID, func(task *Task) {
+		task.Suspend()
+		dispatcher.db.Update(&task)
+		dispatcher.log.Infof("Task #%d suspended", taskID)
+	})
+}
 
-	task.Suspend()
-	dispatcher.db.Update(&task)
-
-	dispatcher.log.Infof("Task #%d suspended", taskId)
-	return nil
+func RunTask(taskID uint) error {
+	return taskAction(taskID, func(task *Task) {
+		task.Run()
+		dispatcher.db.Update(&task)
+		dispatcher.log.Infof("Task #%d started", taskID)
+	})
 }

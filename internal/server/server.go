@@ -18,6 +18,8 @@ import (
 
 var log *logging.Logger
 
+type taskItemHandler func(taskId uint) error
+
 func setupAccessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Infof("[%s] %s %s", r.Method, r.RemoteAddr, r.URL.Path)
@@ -76,16 +78,16 @@ func NewTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func StopTaskHandler(w http.ResponseWriter, r *http.Request) {
+func controlTaskHandler(w http.ResponseWriter, r *http.Request, handler taskItemHandler) {
 	vars := mux.Vars(r)
 	id, err := strconv.ParseUint(vars["task"], 10, 32)
 	if err != nil {
 		webui.ShowError(w, err)
 		return
-	}
-	log.Debugf("Stopping task %d", id)
 
-	err = dispatcher.StopTask(uint(id))
+	}
+
+	err = handler(uint(id))
 	if err != nil {
 		webui.ShowError(w, err)
 		return
@@ -94,40 +96,32 @@ func StopTaskHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func DeleteTaskHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.ParseUint(vars["task"], 10, 32)
-	if err != nil {
-		webui.ShowError(w, err)
-		return
-	}
-	log.Debugf("Deleting task %d", id)
-
-	err = dispatcher.DeleteTask(uint(id))
-	if err != nil {
-		webui.ShowError(w, err)
-		return
-	}
-
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+func stopTaskHandler(w http.ResponseWriter, r *http.Request) {
+	controlTaskHandler(w, r, func(taskId uint) error {
+		log.Debugf("Stopping task %d", taskId)
+		return dispatcher.StopTask(uint(taskId))
+	})
 }
 
-func SuspendTaskHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.ParseUint(vars["task"], 10, 32)
-	if err != nil {
-		webui.ShowError(w, err)
-		return
-	}
-	log.Debugf("Suspending task %d", id)
+func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+	controlTaskHandler(w, r, func(taskId uint) error {
+		log.Debugf("Deleting task %d", taskId)
+		return dispatcher.DeleteTask(uint(taskId))
+	})
+}
 
-	err = dispatcher.SuspendTask(uint(id))
-	if err != nil {
-		webui.ShowError(w, err)
-		return
-	}
+func suspendTaskHandler(w http.ResponseWriter, r *http.Request) {
+	controlTaskHandler(w, r, func(taskId uint) error {
+		log.Debugf("Suspending task %d", taskId)
+		return dispatcher.SuspendTask(uint(taskId))
+	})
+}
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+func runTaskHandler(w http.ResponseWriter, r *http.Request) {
+	controlTaskHandler(w, r, func(taskId uint) error {
+		log.Debugf("Running task %d", taskId)
+		return dispatcher.RunTask(uint(taskId))
+	})
 }
 
 // InstanceRouter - creation full HTTP handler, it is useful for tests
@@ -143,9 +137,10 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 		router.HandleFunc("/task/new/"+id, NewTaskHandler).Methods("GET", "POST")
 	}
 
-	router.HandleFunc("/task/stop/{task}", StopTaskHandler).Methods("GET")
-	router.HandleFunc("/task/delete/{task}", DeleteTaskHandler).Methods("GET")
-	router.HandleFunc("/task/pause/{task}", SuspendTaskHandler).Methods("GET")
+	router.HandleFunc("/task/stop/{task}", stopTaskHandler).Methods("GET")
+	router.HandleFunc("/task/delete/{task}", deleteTaskHandler).Methods("GET")
+	router.HandleFunc("/task/pause/{task}", suspendTaskHandler).Methods("GET")
+	router.HandleFunc("/task/run/{task}", runTaskHandler).Methods("GET")
 
 	router.Use(setupAccessLog)
 	router.Use(setupAccess)
