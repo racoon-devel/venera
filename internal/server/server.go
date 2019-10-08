@@ -65,7 +65,7 @@ func NewTaskHandler(w http.ResponseWriter, r *http.Request) {
 	provider := provider.All()[providerId]
 
 	if r.Method == "POST" {
-		session, err := provider.GetSearchSession(r)
+		session, err := provider.GetSearchSession(log, r)
 		if err != nil {
 			webui.ShowError(w, err)
 			return

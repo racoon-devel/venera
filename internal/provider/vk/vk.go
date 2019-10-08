@@ -1,6 +1,9 @@
 package vk
 
-import "racoondev.tk/gitea/racoon/venera/internal/types"
+import (
+	"github.com/ccding/go-logging/logging"
+	"racoondev.tk/gitea/racoon/venera/internal/types"
+)
 
 type searchSettings struct {
 	User     string
@@ -16,7 +19,7 @@ type searchSettings struct {
 type VkProvider struct {
 }
 
-func (ctx VkProvider) RestoreSearchSession(state string) types.SearchSession {
+func (ctx VkProvider) RestoreSearchSession(log *logging.Logger, state string) types.SearchSession {
 	var session vkSearchSession
 	session.LoadState(state)
 	return &session

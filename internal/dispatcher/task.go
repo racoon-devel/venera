@@ -44,17 +44,23 @@ func (ctx *Task) Execute() {
 }
 
 func (ctx *Task) Run() {
-	ctx.Mode = ModeActive
-	ctx.session.Start()
+	if ctx.Mode != ModeActive {
+		ctx.Mode = ModeActive
+		ctx.session.Start()
+	}
 }
 
 func (ctx *Task) Suspend() {
-	ctx.Mode = ModeIdle
-	ctx.session.Stop()
+	if ctx.Mode != ModeIdle {
+		ctx.Mode = ModeIdle
+		ctx.session.Stop()
+	}
 }
 
 func (ctx *Task) Stop() {
-	ctx.Mode = ModeIdle
-	ctx.session.Stop()
-	ctx.session.Reset()
+	if ctx.Mode != ModeIdle {
+		ctx.Mode = ModeIdle
+		ctx.session.Stop()
+		ctx.session.Reset()
+	}
 }

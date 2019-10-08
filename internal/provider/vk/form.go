@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ccding/go-logging/logging"
+
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
@@ -104,7 +106,7 @@ func (ctx *VkProvider) ShowSearchPage(w http.ResponseWriter) {
 	formTpl.Execute(w, nil)
 }
 
-func (ctx *VkProvider) GetSearchSession(r *http.Request) (types.SearchSession, error) {
+func (ctx *VkProvider) GetSearchSession(log *logging.Logger, r *http.Request) (types.SearchSession, error) {
 	settings, err := getSearchSettings(r)
 	if err != nil {
 		return nil, err

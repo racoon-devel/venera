@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ccding/go-logging/logging"
+
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
@@ -20,6 +22,8 @@ var (
 	<form action="/task/new/tinder" method="POST">
 		User:<input type="text" name="user"><br>
 		Password:<input type="password" name="password"><br>
+		Token:<input type="token" name="token"><br>
+		<a href="https://www.facebook.com/v2.6/dialog/oauth?redirect_uri=fb464891386855067%3A%2F%2Fauthorize%2F&scope=user_birthday,user_photos,user_education_history,email,user_relationship_details,user_friends,user_work_history,user_likes&response_type=token%2Csigned_request&client_id=464891386855067">Get Token</a><br>
 		Age:<input type="text" name="ageFrom"> - <input type="text" name="ageTo"><br>
 		Likes:<input type="text" name="likes"><br>
 		Dislikes:<input type="text" name="dislikes"><br>
@@ -47,6 +51,11 @@ func getSearchSettings(r *http.Request) (*searchSettings, error) {
 		return nil, fmt.Errorf("Field 'password' must be not empty")
 	}
 	ctx.Password = r.Form["password"][0]
+
+	if len(r.Form["token"]) != 1 || len(r.Form["token"][0]) == 0 {
+		return nil, fmt.Errorf("Field 'token' must be not empty")
+	}
+	ctx.Token = r.Form["token"][0]
 
 	if len(r.Form["likes"]) != 1 || len(r.Form["likes"][0]) == 0 {
 		return nil, fmt.Errorf("Field 'likes' must be not empty")
@@ -97,11 +106,11 @@ func (ctx *TinderProvider) ShowSearchPage(w http.ResponseWriter) {
 	formTpl.Execute(w, nil)
 }
 
-func (ctx *TinderProvider) GetSearchSession(r *http.Request) (types.SearchSession, error) {
+func (ctx *TinderProvider) GetSearchSession(log *logging.Logger, r *http.Request) (types.SearchSession, error) {
 	settings, err := getSearchSettings(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewSession(settings), nil
+	return NewSession(settings, log), nil
 }

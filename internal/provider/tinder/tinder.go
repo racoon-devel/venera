@@ -1,10 +1,14 @@
 package tinder
 
-import "racoondev.tk/gitea/racoon/venera/internal/types"
+import (
+	"github.com/ccding/go-logging/logging"
+	"racoondev.tk/gitea/racoon/venera/internal/types"
+)
 
 type searchSettings struct {
 	User     string
 	Password string
+	Token    string
 	AgeFrom  uint
 	AgeTo    uint
 	Likes    []string
@@ -15,8 +19,8 @@ type searchSettings struct {
 type TinderProvider struct {
 }
 
-func (ctx TinderProvider) RestoreSearchSession(state string) types.SearchSession {
-	var session tinderSearchSession
+func (ctx TinderProvider) RestoreSearchSession(log *logging.Logger, state string) types.SearchSession {
+	session := tinderSearchSession{log: log}
 	session.LoadState(state)
 	return &session
 }

@@ -42,7 +42,7 @@ func Init(log *logging.Logger) error {
 
 	for _, task := range tasks {
 		provider := providers[task.Provider]
-		task.session = provider.RestoreSearchSession(task.CurrentState)
+		task.session = provider.RestoreSearchSession(dispatcher.log, task.CurrentState)
 		dispatcher.tasks[task.ID] = task
 
 		task.Execute()
