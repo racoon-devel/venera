@@ -1,7 +1,9 @@
 package tinder
 
 import (
+	"context"
 	"encoding/json"
+	"sync"
 
 	"github.com/ccding/go-logging/logging"
 
@@ -14,14 +16,19 @@ type tinderSessionState struct {
 }
 
 type tinderSearchSession struct {
-	state  tinderSessionState
-	api    *tindergo.TinderGo
-	status types.SessionStatus
-	log    *logging.Logger
+	state     tinderSessionState
+	api       *tindergo.TinderGo
+	status    types.SessionStatus
+	log       *logging.Logger
+	mutex     sync.Mutex
+	lastError error
 }
 
-func (ctx *tinderSearchSession) SaveState() string {
-	data, err := json.Marshal(&ctx.state)
+func (session *tinderSearchSession) SaveState() string {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	data, err := json.Marshal(&session.state)
 	if err != nil {
 		panic(err)
 	}
@@ -29,37 +36,39 @@ func (ctx *tinderSearchSession) SaveState() string {
 	return string(data)
 }
 
-func (ctx *tinderSearchSession) LoadState(state string) error {
-	err := json.Unmarshal([]byte(state), &ctx.state)
+func (session *tinderSearchSession) LoadState(state string) error {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	err := json.Unmarshal([]byte(state), &session.state)
 	return err
 }
 
-func (ctx *tinderSearchSession) process() {
-	ctx.log.Debugf("Starting Tinder API Session....")
-	ctx.api = tindergo.New()
-	err := ctx.api.Authenticate(ctx.state.Search.Token)
+func (session *tinderSearchSession) Process(ctx *context.Context) {
+	session.log.Debugf("Starting Tinder API Session....")
+
+	session.mutex.Lock()
+	session.status = types.StatusRunning
+	session.mutex.Unlock()
+
+	session.api = tindergo.New()
+	err := session.api.Authenticate(session.state.Search.Token)
 	if err != nil {
-		ctx.log.Errorf("tinder: authenticate failed: %+v", err)
+		session.log.Errorf("tinder: authenticate failed: %+v", err)
 	}
 }
 
-func (ctx *tinderSearchSession) Start() {
-	ctx.status = types.StatusRunning
-	go ctx.process()
+func (session *tinderSearchSession) Reset() {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
 }
 
-func (ctx *tinderSearchSession) Stop() {
-
-}
-
-func (ctx *tinderSearchSession) Reset() {
-
-}
-
-func (ctx *tinderSearchSession) Status() types.SessionStatus {
-	return ctx.status
+func (session *tinderSearchSession) Status() types.SessionStatus {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+	return session.status
 }
 
 func NewSession(search *searchSettings, log *logging.Logger) *tinderSearchSession {
-	return &tinderSearchSession{state: tinderSessionState{Search: *search}}
+	return &tinderSearchSession{state: tinderSessionState{Search: *search}, log: log}
 }

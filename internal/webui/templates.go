@@ -37,9 +37,6 @@ func statusToHumanReadable(status types.SessionStatus) string {
 	case types.StatusRunning:
 		return "Running"
 
-	case types.StatusPaused:
-		return "Paused"
-
 	case types.StatusStopped:
 		return "Stopped"
 
@@ -67,7 +64,7 @@ var (
 		<small>{{ts $t.Remaining }}</small><br>
 		<small>Status: {{status $t.Status}}</small><br>
 		<table><td>
-		{{ if (ne $t.Status 2) }}
+		{{ if eq $t.Status 1 }}
 		<a href="/task/pause/{{$t.ID}}">Pause</a>
 		{{ else }}
 		<a href="/task/run/{{$t.ID}}">Run</a>

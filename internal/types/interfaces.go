@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/ccding/go-logging/logging"
@@ -11,15 +12,13 @@ type SessionStatus int
 const (
 	StatusIdle = iota
 	StatusRunning
-	StatusPaused
 	StatusStopped
 	StatusError
 )
 
 // SearchSession - search session of some provider
 type SearchSession interface {
-	Start()
-	Stop()
+	Process(ctx *context.Context)
 	Reset()
 
 	Status() SessionStatus

@@ -1,6 +1,7 @@
 package vk
 
 import (
+	"context"
 	"encoding/json"
 
 	"racoondev.tk/gitea/racoon/venera/internal/types"
@@ -42,13 +43,9 @@ func (ctx *vkSearchSession) LoadState(state string) error {
 	return err
 }
 
-func (ctx *vkSearchSession) Start() {
-	ctx.status = types.StatusRunning
+func (session *vkSearchSession) Process(ctx *context.Context) {
+	session.status = types.StatusRunning
 	//go ctx.do()
-}
-
-func (ctx *vkSearchSession) Stop() {
-	//ctx.done <- true
 }
 
 func (ctx *vkSearchSession) Reset() {

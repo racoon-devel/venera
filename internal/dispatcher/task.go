@@ -1,7 +1,11 @@
 package dispatcher
 
 import (
+	"context"
+	"sync"
 	"time"
+
+	"github.com/ccding/go-logging/logging"
 
 	"github.com/jinzhu/gorm"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
@@ -10,8 +14,8 @@ import (
 type TaskMode int
 
 const (
-	ModeActive = iota
-	ModeIdle
+	ModeIdle = iota
+	ModeActive
 )
 
 type Task struct {
@@ -20,6 +24,9 @@ type Task struct {
 	Provider     string
 	Mode         TaskMode
 	session      types.SearchSession `gorm:"-"`
+	wg           sync.WaitGroup      `gorm:"-"`
+	cancel       context.CancelFunc  `gorm:"-"`
+	log          *logging.Logger     `gorm:"-"`
 }
 
 type TaskInfo struct {
@@ -37,30 +44,52 @@ func (ctx Task) GetInfo() TaskInfo {
 	return ti
 }
 
-func (ctx *Task) Execute() {
-	if ctx.Mode == ModeActive {
-		ctx.Run()
+func (task *Task) Execute() {
+	if task.Mode == ModeActive {
+		task.start()
 	}
 }
 
-func (ctx *Task) Run() {
-	if ctx.Mode != ModeActive {
-		ctx.Mode = ModeActive
-		ctx.session.Start()
+func (task *Task) start() {
+	task.Mode = ModeActive
+	var ctx context.Context
+	ctx, task.cancel = context.WithCancel(context.Background())
+	task.wg.Add(1)
+
+	task.log.Infof("Starting task %s:#%d...", task.Provider, task.ID)
+
+	go func() {
+		task.log.Infof("Task %s:#%d started", task.Provider, task.ID)
+		task.session.Process(&ctx)
+		task.wg.Done()
+	}()
+}
+
+func (task *Task) Run() {
+	if task.Mode != ModeActive {
+		task.start()
 	}
 }
 
-func (ctx *Task) Suspend() {
-	if ctx.Mode != ModeIdle {
-		ctx.Mode = ModeIdle
-		ctx.session.Stop()
+func (task *Task) Suspend() {
+	if task.Mode != ModeIdle {
+		task.Mode = ModeIdle
+		task.log.Infof("Stopping task %s:#%d...", task.Provider, task.ID)
+		task.cancel()
+		task.wg.Wait()
+		task.log.Infof("Task %s:#%d stopped", task.Provider, task.ID)
 	}
 }
 
-func (ctx *Task) Stop() {
-	if ctx.Mode != ModeIdle {
-		ctx.Mode = ModeIdle
-		ctx.session.Stop()
-		ctx.session.Reset()
+func (task *Task) Stop() {
+	task.log.Debugf("task.Mode: %+v", task.Mode)
+
+	if task.Mode != ModeIdle {
+		task.Mode = ModeIdle
+		task.log.Infof("Stopping task %s:#%d...", task.Provider, task.ID)
+		task.cancel()
+		task.wg.Wait()
+		task.session.Reset()
+		task.log.Infof("Task %s:#%d stopped", task.Provider, task.ID)
 	}
 }

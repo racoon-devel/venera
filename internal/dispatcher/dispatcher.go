@@ -16,7 +16,7 @@ import (
 var dispatcher struct {
 	log   *logging.Logger
 	db    *gorm.DB
-	tasks map[uint]Task
+	tasks map[uint]*Task
 	mutex sync.Mutex
 }
 
@@ -34,7 +34,7 @@ func Init(log *logging.Logger) error {
 
 	dispatcher.db.AutoMigrate(&Task{})
 
-	dispatcher.tasks = make(map[uint]Task, 0)
+	dispatcher.tasks = make(map[uint]*Task, 0)
 
 	tasks := make([]Task, 0)
 	dispatcher.db.Find(&tasks)
@@ -43,26 +43,32 @@ func Init(log *logging.Logger) error {
 	for _, task := range tasks {
 		provider := providers[task.Provider]
 		task.session = provider.RestoreSearchSession(dispatcher.log, task.CurrentState)
-		dispatcher.tasks[task.ID] = task
+		task.log = dispatcher.log
+		dispatcher.tasks[task.ID] = &task
+		log.Debugf("Task %s:#%d mode: %d", task.Provider, task.ID, task.Mode)
 
 		task.Execute()
 	}
+
+	dispatcher.log.Debugf("Dispatcher inited")
 
 	return nil
 }
 
 func NewTask(session types.SearchSession, provider string) {
-	task := Task{}
+	task := Task{log: dispatcher.log}
 	task.CurrentState = session.SaveState()
 	task.Provider = provider
+	task.session = session
+	task.Mode = ModeActive
 
 	dispatcher.db.Create(&task)
 
 	dispatcher.mutex.Lock()
 	defer dispatcher.mutex.Unlock()
 
-	dispatcher.tasks[task.ID] = task
-	task.Run()
+	dispatcher.tasks[task.ID] = &task
+	task.Execute()
 }
 
 func Describe() []TaskInfo {
@@ -88,14 +94,14 @@ func taskAction(taskID uint, handler func(task *Task)) error {
 		return fmt.Errorf("Task not found: %d", taskID)
 	}
 
-	handler(&task)
+	handler(task)
 	return nil
 }
 
 func StopTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Stop()
-		dispatcher.db.Update(&task)
+		dispatcher.db.Save(&task)
 		dispatcher.log.Infof("Task #%d stopped", taskID)
 	})
 }
@@ -112,7 +118,7 @@ func DeleteTask(taskID uint) error {
 func SuspendTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Suspend()
-		dispatcher.db.Update(&task)
+		dispatcher.db.Save(&task)
 		dispatcher.log.Infof("Task #%d suspended", taskID)
 	})
 }
@@ -120,7 +126,7 @@ func SuspendTask(taskID uint) error {
 func RunTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Run()
-		dispatcher.db.Update(&task)
+		dispatcher.db.Save(&task)
 		dispatcher.log.Infof("Task #%d started", taskID)
 	})
 }
