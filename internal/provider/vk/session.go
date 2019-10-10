@@ -43,7 +43,7 @@ func (ctx *vkSearchSession) LoadState(state string) error {
 	return err
 }
 
-func (session *vkSearchSession) Process(ctx *context.Context) {
+func (session *vkSearchSession) Process(ctx context.Context) {
 	session.status = types.StatusRunning
 	//go ctx.do()
 }

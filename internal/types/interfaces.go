@@ -18,7 +18,7 @@ const (
 
 // SearchSession - search session of some provider
 type SearchSession interface {
-	Process(ctx *context.Context)
+	Process(ctx context.Context)
 	Reset()
 
 	Status() SessionStatus

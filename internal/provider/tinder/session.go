@@ -1,7 +1,6 @@
 package tinder
 
 import (
-	"context"
 	"encoding/json"
 	"sync"
 
@@ -42,20 +41,6 @@ func (session *tinderSearchSession) LoadState(state string) error {
 
 	err := json.Unmarshal([]byte(state), &session.state)
 	return err
-}
-
-func (session *tinderSearchSession) Process(ctx *context.Context) {
-	session.log.Debugf("Starting Tinder API Session....")
-
-	session.mutex.Lock()
-	session.status = types.StatusRunning
-	session.mutex.Unlock()
-
-	session.api = tindergo.New()
-	err := session.api.Authenticate(session.state.Search.Token)
-	if err != nil {
-		session.log.Errorf("tinder: authenticate failed: %+v", err)
-	}
 }
 
 func (session *tinderSearchSession) Reset() {
