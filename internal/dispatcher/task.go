@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/ccding/go-logging/logging"
-
 	"github.com/jinzhu/gorm"
+
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
 
@@ -60,7 +60,7 @@ func (task *Task) start() {
 
 	go func() {
 		task.log.Infof("Task %s:#%d started", task.Provider, task.ID)
-		task.session.Process(&ctx)
+		task.session.Process(ctx)
 		task.wg.Done()
 	}()
 }

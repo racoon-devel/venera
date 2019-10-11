@@ -1,12 +1,13 @@
 package tinder
 
 import (
+	"context"
 	"encoding/json"
 	"sync"
 
 	"github.com/ccding/go-logging/logging"
 
-	"github.com/DiSiqueira/TinderGo"
+	"racoondev.tk/gitea/racoon/tindergo"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
 
@@ -56,4 +57,17 @@ func (session *tinderSearchSession) Status() types.SessionStatus {
 
 func NewSession(search *searchSettings, log *logging.Logger) *tinderSearchSession {
 	return &tinderSearchSession{state: tinderSessionState{Search: *search}, log: log}
+}
+
+func (session *tinderSearchSession) Process(ctx context.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			session.log.Errorf("Tinder session panic: %+v. Recovered", r)
+
+			session.mutex.Lock()
+			defer session.mutex.Unlock()
+			session.status = types.StatusStopped
+		}
+	}()
+	session.process(ctx)
 }

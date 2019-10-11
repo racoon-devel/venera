@@ -1,25 +1,34 @@
 package tinder
 
 import (
-	"time"
+	"context"
 
 	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
-func (ctx *tinderSearchSession) raise(err error) {
-	ctx.mutex.Lock()
-	defer ctx.mutex.Unlock()
+const (
+	minDelayMs uint32 = 600
+	maxDelayMs uint32 = 5300
+)
 
-	ctx.log.Criticalf("tinder: %+v", err)
-	ctx.status = types.StatusError
+func (session *tinderSearchSession) raise(err error) {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	session.log.Criticalf("tinder: %+v", err)
+	session.status = types.StatusError
 }
 
-func (ctx *tinderSearchSession) repeat(interval time.Duration, action func() error) {
-	// TODO: stop
+func (session *tinderSearchSession) repeat(ctx context.Context, handler func() error) {
 	for {
-		<-time.After(interval)
-		if err := action(); err != nil {
-			ctx.log.Warningf("Action failed: %+v", err)
+		utils.Delay(ctx, utils.Range{MinMs: minDelayMs, MaxMs: maxDelayMs})
+
+		err := handler()
+		if err == nil {
+			return
 		}
+
+		session.raise(err)
 	}
 }
