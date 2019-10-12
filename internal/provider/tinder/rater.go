@@ -57,18 +57,26 @@ func (self *tinderRater) Rate(person *types.Person) int {
 		return -1
 	}
 
-	photo, err := utils.HttpRequest(person.Photo[0])
-	if err == nil {
-		result, _ := self.detector.IsFacePresent(photo)
-		if !result {
-			return -1
+	hasPhoto := false
+	for _, url := range person.Photo {
+		photo, err := utils.HttpRequest(url)
+		if err == nil {
+			result, _ := self.detector.IsFacePresent(photo)
+			if result {
+				hasPhoto = true
+				break
+			}
 		}
+	}
+
+	if !hasPhoto {
+		return -1
 	}
 
 	if person.Bio != "" {
 		rating++
 
-		text := strings.ToLower(person.Bio)
+		text := "\n" + strings.ToLower(person.Bio)
 		person.BioMatches = getMatches(text, self.likes)
 		dismatches := getMatches(text, self.dislikes)
 

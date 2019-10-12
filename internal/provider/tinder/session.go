@@ -23,11 +23,16 @@ type tinderSearchSession struct {
 	status    types.SessionStatus
 	lastError error
 	mutex     sync.Mutex
+	results   []*types.Person
 
 	api   *tindergo.TinderGo
 	log   *logging.Logger
 	rater *tinderRater
 	top   *topList
+}
+
+func NewSession(search *searchSettings, log *logging.Logger) *tinderSearchSession {
+	return &tinderSearchSession{state: tinderSessionState{Search: *search}, log: log}
 }
 
 func (session *tinderSearchSession) SaveState() string {
@@ -69,10 +74,6 @@ func (session *tinderSearchSession) Status() types.SessionStatus {
 	return session.status
 }
 
-func NewSession(search *searchSettings, log *logging.Logger) *tinderSearchSession {
-	return &tinderSearchSession{state: tinderSessionState{Search: *search}, log: log}
-}
-
 func (session *tinderSearchSession) Process(ctx context.Context) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -84,4 +85,12 @@ func (session *tinderSearchSession) Process(ctx context.Context) {
 		}
 	}()
 	session.process(ctx)
+}
+
+func (session *tinderSearchSession) Results() []*types.Person {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+	result := session.results
+	session.results = make([]*types.Person, 0)
+	return result
 }

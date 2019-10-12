@@ -2,7 +2,6 @@ package tinder
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 
 	"racoondev.tk/gitea/racoon/tindergo"
@@ -58,6 +57,7 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 
 	session.mutex.Lock()
 	session.status = types.StatusRunning
+	session.results = make([]*types.Person, 0)
 	session.mutex.Unlock()
 
 	session.api = tindergo.New()
@@ -111,6 +111,11 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 				_, err := session.api.Like(record)
 				return err
 			})
+
+			if rating > 0 {
+				session.appendResult(&person)
+			}
+
 		} else {
 			session.log.Debugf("Dislike '%s' rating(%d)", person.Name, 0)
 			session.repeat(ctx, func() error {
@@ -124,12 +129,16 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 func convert(record *tindergo.RecsCoreUser) types.Person {
 	person := types.Person{UserID: record.ID, Name: record.Name, Bio: record.Bio}
 	person.Photo = make([]string, 0)
-	person.Job = make([]string, 0)
 	for _, photo := range record.Photos {
 		person.Photo = append(person.Photo, photo.URL)
 	}
 
-	fmt.Println(record.Jobs)
-
 	return person
+}
+
+func (session *tinderSearchSession) appendResult(person *types.Person) {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	session.results = append(session.results, person)
 }

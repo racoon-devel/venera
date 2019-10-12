@@ -17,11 +17,11 @@ type TextMatch struct {
 
 type Person struct {
 	gorm.Model
+	TaskID     uint
 	UserID     string
-	Rating     int
+	Rating     int `sql:"index"`
 	Name       string
 	Bio        string
 	BioMatches []TextMatch
-	Photo      []string
-	Job        []string
+	Photo      []string `gorm:"-"`
 }

@@ -25,6 +25,8 @@ type SearchSession interface {
 
 	SaveState() string
 	LoadState(string) error
+
+	Results() []*Person
 }
 
 // Provider - object for searching people in some social network

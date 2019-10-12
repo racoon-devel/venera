@@ -55,3 +55,7 @@ func (ctx *vkSearchSession) Reset() {
 func (ctx *vkSearchSession) Status() types.SessionStatus {
 	return ctx.status
 }
+
+func (session *vkSearchSession) Results() []*types.Person {
+	return nil
+}

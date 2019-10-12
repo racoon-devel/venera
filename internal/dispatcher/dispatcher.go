@@ -33,7 +33,7 @@ func Init(log *logging.Logger) error {
 		return err
 	}
 
-	dispatcher.db.AutoMigrate(&Task{})
+	dispatcher.db.AutoMigrate(&Task{}, &types.Person{})
 
 	dispatcher.tasks = make(map[uint]*Task, 0)
 

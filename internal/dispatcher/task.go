@@ -16,6 +16,8 @@ type TaskMode int
 const (
 	ModeIdle = iota
 	ModeActive
+
+	pollingInterval time.Duration = 2 * time.Minute
 )
 
 type Task struct {
@@ -27,6 +29,7 @@ type Task struct {
 	wg           sync.WaitGroup      `gorm:"-"`
 	cancel       context.CancelFunc  `gorm:"-"`
 	log          *logging.Logger     `gorm:"-"`
+	timer        *time.Ticker        `gorm:"-"`
 }
 
 type TaskInfo struct {
@@ -54,15 +57,32 @@ func (task *Task) start() {
 	task.Mode = ModeActive
 	var ctx context.Context
 	ctx, task.cancel = context.WithCancel(context.Background())
-	task.wg.Add(1)
+	task.wg.Add(2)
 
 	task.log.Infof("Starting task %s:#%d...", task.Provider, task.ID)
 
 	go func() {
+		defer task.wg.Done()
 		task.log.Infof("Task %s:#%d started", task.Provider, task.ID)
 		task.session.Process(ctx)
-		task.wg.Done()
 	}()
+
+	task.timer = time.NewTicker(pollingInterval)
+	timerCtx, _ := context.WithCancel(ctx)
+
+	go func(ctx context.Context) {
+		defer task.wg.Done()
+		for {
+			select {
+			case <-task.timer.C:
+				task.poll()
+
+			case <-ctx.Done():
+				task.timer.Stop()
+				return
+			}
+		}
+	}(timerCtx)
 }
 
 func (task *Task) Run() {
@@ -92,4 +112,16 @@ func (task *Task) Stop() {
 		task.session.Reset()
 		task.log.Infof("Task %s:#%d stopped", task.Provider, task.ID)
 	}
+}
+
+func (task *Task) poll() {
+	task.CurrentState = task.session.SaveState()
+	dispatcher.db.Save(&task)
+	matches := task.session.Results()
+	for _, match := range matches {
+		match.TaskID = task.ID
+		dispatcher.db.Create(match)
+	}
+
+	dispatcher.log.Infof("polling: task %s:#%d got %d results", task.Provider, task.ID, len(matches))
 }
