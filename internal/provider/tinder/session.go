@@ -3,6 +3,7 @@ package tinder
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/ccding/go-logging/logging"
@@ -33,7 +34,9 @@ func (session *tinderSearchSession) SaveState() string {
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
 
-	session.state.Top = session.top.Get()
+	if session.top != nil {
+		session.state.Top = session.top.Get()
+	}
 
 	data, err := json.Marshal(&session.state)
 	if err != nil {
@@ -51,6 +54,7 @@ func (session *tinderSearchSession) LoadState(state string) error {
 	if err == nil {
 		session.top = loadTopList(maxSuperLikes, session.state.Top)
 	}
+	fmt.Println(err)
 	return err
 }
 

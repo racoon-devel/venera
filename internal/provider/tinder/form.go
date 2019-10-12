@@ -96,8 +96,6 @@ func getSearchSettings(r *http.Request) (*searchSettings, error) {
 		return nil, fmt.Errorf("Field 'ageTo' must be greater or equal than field 'ageFrom'")
 	}
 
-	fmt.Println(ctx)
-
 	return &ctx, nil
 }
 

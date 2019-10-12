@@ -2,6 +2,7 @@ package tinder
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 
 	"racoondev.tk/gitea/racoon/tindergo"
@@ -94,7 +95,7 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 
 	for _, record := range persons {
 		session.log.Debugf("Rate person '%s'...", record.Name)
-		person := types.Person{Name: record.Name, Bio: record.Bio}
+		person := convert(&record)
 		rating := session.rater.Rate(&person)
 
 		if person.Bio != "" {
@@ -118,5 +119,17 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 			})
 		}
 	}
+}
 
+func convert(record *tindergo.RecsCoreUser) types.Person {
+	person := types.Person{UserID: record.ID, Name: record.Name, Bio: record.Bio}
+	person.Photo = make([]string, 0)
+	person.Job = make([]string, 0)
+	for _, photo := range record.Photos {
+		person.Photo = append(person.Photo, photo.URL)
+	}
+
+	fmt.Println(record.Jobs)
+
+	return person
 }

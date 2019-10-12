@@ -8,6 +8,7 @@ import (
 	"github.com/ccding/go-logging/logging"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+
 	"racoondev.tk/gitea/racoon/venera/internal/provider"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"

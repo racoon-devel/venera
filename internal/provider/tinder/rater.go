@@ -1,17 +1,18 @@
 package tinder
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
 	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
 type tinderRater struct {
 	settings *types.SearchSettings
 	likes    []*regexp.Regexp
 	dislikes []*regexp.Regexp
+	detector *utils.FaceDetector
 }
 
 func (self *tinderRater) Init(settings *types.SearchSettings) {
@@ -27,6 +28,12 @@ func (self *tinderRater) Init(settings *types.SearchSettings) {
 		expr := regexp.MustCompile("[,.:;(*\\s](" + strings.ToLower(dislike) + ")")
 		self.dislikes = append(self.dislikes, expr)
 	}
+
+	var err error
+	self.detector, err = utils.NewFaceDetector(utils.Configuration.Other.CascadePath)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func getMatches(text string, exprs []*regexp.Regexp) []types.TextMatch {
@@ -36,7 +43,6 @@ func getMatches(text string, exprs []*regexp.Regexp) []types.TextMatch {
 		matches := expr.FindAllStringSubmatchIndex(text, -1)
 		for _, match := range matches {
 			result = append(result, types.TextMatch{Begin: match[2], End: match[3]})
-			fmt.Println("Match: ", text[match[2]:match[3]])
 		}
 	}
 
@@ -46,6 +52,18 @@ func getMatches(text string, exprs []*regexp.Regexp) []types.TextMatch {
 // <0 - dislike, =0 random, >1 - like and save
 func (self *tinderRater) Rate(person *types.Person) int {
 	var rating int
+
+	if person.Photo == nil || len(person.Photo) == 0 {
+		return -1
+	}
+
+	photo, err := utils.HttpRequest(person.Photo[0])
+	if err == nil {
+		result, _ := self.detector.IsFacePresent(photo)
+		if !result {
+			return -1
+		}
+	}
 
 	if person.Bio != "" {
 		rating++

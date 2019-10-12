@@ -17,9 +17,11 @@ type TextMatch struct {
 
 type Person struct {
 	gorm.Model
-	ID         string
+	UserID     string
 	Rating     int
 	Name       string
 	Bio        string
 	BioMatches []TextMatch
+	Photo      []string
+	Job        []string
 }

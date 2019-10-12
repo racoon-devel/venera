@@ -22,9 +22,14 @@ type dbEntry struct {
 	Database string
 }
 
+type otherEntry struct {
+	CascadePath string
+}
+
 type Config struct {
 	Http     httpEntry
 	Database dbEntry
+	Other    otherEntry
 }
 
 var Configuration Config
