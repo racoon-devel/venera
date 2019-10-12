@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	maxSuperLikes uint = 5
 	// TODO: в SearchSettings
 	locationLatitude   float32 = 55.741676
 	locationLongtitude float32 = 37.624928
@@ -44,6 +45,8 @@ func (session *tinderSearchSession) setup(ctx context.Context) {
 		GenderFilter:   1,
 	}
 
+	session.log.Debug(pref.AgeFilterMin, pref.AgeFilterMax)
+
 	session.repeat(ctx, func() error {
 		return session.api.UpdateSearchPreferences(pref)
 	})
@@ -57,14 +60,23 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 	session.mutex.Unlock()
 
 	session.api = tindergo.New()
+	session.rater = &tinderRater{}
+	session.rater.Init(&session.state.Search.SearchSettings)
+
+	if session.top == nil {
+		session.top = newTopList(maxSuperLikes)
+	}
+
 	session.setup(ctx)
 
 	for {
 		for i := 0; i < requestPerSession; i++ {
 			session.processBatch(ctx)
+			session.log.Info("tinder: processing batch finished")
 			utils.Delay(ctx, utils.Range{MinMs: delayBatchMinMs, MaxMs: delayBatchMaxMs})
 		}
 
+		session.log.Info("tinder: processing session finished")
 		utils.Delay(ctx, utils.Range{MinMs: delaySessionMinMs, MaxMs: delaySessionMaxMs})
 	}
 }
@@ -80,22 +92,28 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 
 	session.log.Debugf("tinder: got %d persons", len(persons))
 
-	for _, person := range persons {
-		session.log.Debugf("Rate person '%s'...", person.Name)
-		rating := rate(&person, &session.state.Search)
+	for _, record := range persons {
+		session.log.Debugf("Rate person '%s'...", record.Name)
+		person := types.Person{Name: record.Name, Bio: record.Bio}
+		rating := session.rater.Rate(&person)
+
+		if person.Bio != "" {
+			session.log.Debug(person.Bio)
+		}
 
 		toLike := rand.Intn(2)
 
 		if rating > 0 || (rating == 0 && toLike == 1) {
+			session.top.Push(person)
 			session.log.Debugf("Like '%s' rating(%d)", person.Name, rating)
 			session.repeat(ctx, func() error {
-				_, err := session.api.Like(person)
+				_, err := session.api.Like(record)
 				return err
 			})
 		} else {
 			session.log.Debugf("Dislike '%s' rating(%d)", person.Name, 0)
 			session.repeat(ctx, func() error {
-				_, err := session.api.Pass(person)
+				_, err := session.api.Pass(record)
 				return err
 			})
 		}

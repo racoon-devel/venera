@@ -33,3 +33,8 @@ type Provider interface {
 	GetSearchSession(log *logging.Logger, r *http.Request) (SearchSession, error)
 	RestoreSearchSession(log *logging.Logger, state string) SearchSession
 }
+
+type Rater interface {
+	Init(settings *SearchSettings)
+	Rate(person *Person)
+}

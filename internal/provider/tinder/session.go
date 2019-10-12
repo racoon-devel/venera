@@ -13,20 +13,27 @@ import (
 
 type tinderSessionState struct {
 	Search searchSettings
+	Top    []types.Person
 }
 
 type tinderSearchSession struct {
+	// Защищено мьютексом
 	state     tinderSessionState
-	api       *tindergo.TinderGo
 	status    types.SessionStatus
-	log       *logging.Logger
-	mutex     sync.Mutex
 	lastError error
+	mutex     sync.Mutex
+
+	api   *tindergo.TinderGo
+	log   *logging.Logger
+	rater *tinderRater
+	top   *topList
 }
 
 func (session *tinderSearchSession) SaveState() string {
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
+
+	session.state.Top = session.top.Get()
 
 	data, err := json.Marshal(&session.state)
 	if err != nil {
@@ -41,6 +48,9 @@ func (session *tinderSearchSession) LoadState(state string) error {
 	defer session.mutex.Unlock()
 
 	err := json.Unmarshal([]byte(state), &session.state)
+	if err == nil {
+		session.top = loadTopList(maxSuperLikes, session.state.Top)
+	}
 	return err
 }
 
