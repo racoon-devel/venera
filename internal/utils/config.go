@@ -23,7 +23,7 @@ type dbEntry struct {
 }
 
 type otherEntry struct {
-	CascadePath string
+	Content string
 }
 
 type Config struct {

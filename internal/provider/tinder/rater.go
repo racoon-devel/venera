@@ -16,7 +16,7 @@ type tinderRater struct {
 func (self *tinderRater) Init(log *logging.Logger, settings *types.SearchSettings) {
 	self.settings = settings
 	var err error
-	self.detector, err = utils.NewFaceDetector(utils.Configuration.Other.CascadePath)
+	self.detector, err = utils.NewFaceDetector(utils.Configuration.Other.Content + "/cascade/facefinder")
 	if err != nil {
 		panic(err)
 	}

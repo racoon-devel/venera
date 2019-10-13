@@ -1,0 +1,22 @@
+{{ define "main" }}
+{{ template "header" }}
+<table>
+    <!-- {{range $i, $t := $.Tasks}}
+        <hr>
+        <a href="/task/{{$t.ID}}">Task #{{$t.ID}} [ {{$t.Provider}} ]</a><br>
+        <small>{{ts $t.Remaining }}</small><br>
+        <small>Status: {{status $t.Status}}</small><br>
+        <table><td>
+        {{ if eq $t.Status 1 }}
+        <a href="/task/pause/{{$t.ID}}">Pause</a>
+        {{ else }}
+        <a href="/task/run/{{$t.ID}}">Run</a>
+        {{ end }}
+        </td>
+        <td><a href="/task/stop/{{$t.ID}}">Stop</a></td>
+        <td><a href="/task/delete/{{$t.ID}}">Delete</a></td>
+        </table>
+    {{- end}} -->
+</table>
+{{ template "footer" }}
+{{ end }}

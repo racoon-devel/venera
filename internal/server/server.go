@@ -141,7 +141,7 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	router.HandleFunc("/task/pause/{task}", suspendTaskHandler).Methods("GET")
 	router.HandleFunc("/task/run/{task}", runTaskHandler).Methods("GET")
 
-	router.PathPrefix("/ui/").Handler(http.StripPrefix("/ui/", http.FileServer(http.Dir("web/"))))
+	router.PathPrefix("/ui/").Handler(http.StripPrefix("/ui/", http.FileServer(http.Dir(utils.Configuration.Other.Content+"/web/"))))
 	router.Use(setupAccessLog)
 	router.Use(setupAccess)
 	router.Use(setupPanicHandler)
