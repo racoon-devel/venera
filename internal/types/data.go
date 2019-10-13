@@ -1,7 +1,11 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/jinzhu/gorm"
+
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
 type TaskRecord struct {
@@ -19,17 +23,12 @@ type SearchSettings struct {
 	Dislikes []string
 }
 
-type TextMatch struct {
-	Begin int
-	End   int
-}
-
 type Person struct {
 	UserID     string
 	Rating     int
 	Name       string
 	Bio        string
-	BioMatches []TextMatch
+	BioMatches []utils.TextMatch
 	Photo      []string
 }
 
@@ -38,4 +37,20 @@ type PersonRecord struct {
 	TaskID      uint
 	Rating      int `sql:"index"`
 	Description string
+}
+
+func (self SearchSettings) Validate() error {
+	if err := utils.Validate(self.Likes); err != nil {
+		return err
+	}
+
+	if err := utils.Validate(self.Dislikes); err != nil {
+		return err
+	}
+
+	if self.AgeTo < self.AgeFrom || self.AgeFrom < 18 || self.AgeTo < 18 {
+		return fmt.Errorf("Invalid age: %d - %d", self.AgeFrom, self.AgeTo)
+	}
+
+	return nil
 }

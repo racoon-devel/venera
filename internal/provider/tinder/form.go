@@ -16,7 +16,9 @@ import (
 var (
 	formTpl = template.Must(template.New("tinder").Parse(`
 	<html>
-	<head></head>
+	<head>
+		<link rel="stylesheet" href="/styles/default.css">
+	</head>
 	<body>
 	<h2>New task</h2>
 	<form action="/task/new/tinder" method="POST">
@@ -25,8 +27,8 @@ var (
 		Token:<input type="token" name="token"><br>
 		<a href="https://www.facebook.com/v2.6/dialog/oauth?redirect_uri=fb464891386855067%3A%2F%2Fauthorize%2F&scope=user_birthday,user_photos,user_education_history,email,user_relationship_details,user_friends,user_work_history,user_likes&response_type=token%2Csigned_request&client_id=464891386855067">Get Token</a><br>
 		Age:<input type="text" name="ageFrom"> - <input type="text" name="ageTo"><br>
-		Likes:<input type="text" name="likes"><br>
-		Dislikes:<input type="text" name="dislikes"><br>
+		Likes:<textarea name="likes" rows="5" cols="100"></textarea><br>
+		Dislikes:<textarea name="dislikes" rows="5" cols="100"></textarea><br>
 		<input type="submit" value="Submit">
 	</form>
 	</body>
@@ -92,10 +94,6 @@ func getSearchSettings(r *http.Request) (*searchSettings, error) {
 
 	ctx.AgeTo = uint(u)
 
-	if ctx.AgeFrom > ctx.AgeTo {
-		return nil, fmt.Errorf("Field 'ageTo' must be greater or equal than field 'ageFrom'")
-	}
-
 	return &ctx, nil
 }
 
@@ -107,6 +105,10 @@ func (ctx *TinderProvider) ShowSearchPage(w http.ResponseWriter) {
 func (ctx *TinderProvider) GetSearchSession(log *logging.Logger, r *http.Request) (types.SearchSession, error) {
 	settings, err := getSearchSettings(r)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := settings.SearchSettings.Validate(); err != nil {
 		return nil, err
 	}
 

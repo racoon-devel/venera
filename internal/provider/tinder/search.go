@@ -62,7 +62,7 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 
 	session.api = tindergo.New()
 	session.rater = &tinderRater{}
-	session.rater.Init(&session.state.Search.SearchSettings)
+	session.rater.Init(session.log, &session.state.Search.SearchSettings)
 
 	if session.top == nil {
 		session.top = newTopList(maxSuperLikes)
