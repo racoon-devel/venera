@@ -1,6 +1,15 @@
 package types
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/jinzhu/gorm"
+)
+
+type TaskRecord struct {
+	gorm.Model
+	CurrentState string
+	Provider     string
+	Mode         int
+}
 
 type SearchSettings struct {
 	AgeFrom  uint
@@ -16,12 +25,17 @@ type TextMatch struct {
 }
 
 type Person struct {
-	gorm.Model
-	TaskID     uint
 	UserID     string
-	Rating     int `sql:"index"`
+	Rating     int
 	Name       string
 	Bio        string
 	BioMatches []TextMatch
-	Photo      []string `gorm:"-"`
+	Photo      []string
+}
+
+type PersonRecord struct {
+	gorm.Model
+	TaskID      uint
+	Rating      int `sql:"index"`
+	Description string
 }

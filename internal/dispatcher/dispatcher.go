@@ -6,17 +6,17 @@ import (
 	"sync"
 
 	"github.com/ccding/go-logging/logging"
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	"racoondev.tk/gitea/racoon/venera/internal/provider"
+	"racoondev.tk/gitea/racoon/venera/internal/storage"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
 var dispatcher struct {
 	log   *logging.Logger
-	db    *gorm.DB
+	db    *storage.Storage
 	tasks map[uint]*Task
 	mutex sync.Mutex
 }
@@ -28,24 +28,21 @@ func Init(log *logging.Logger) error {
 	dispatcher.log = log
 
 	var err error
-	dispatcher.db, err = gorm.Open("postgres", utils.Configuration.GetConnectionString())
+	dispatcher.db, err = storage.Connect(utils.Configuration.GetConnectionString())
 	if err != nil {
 		return err
 	}
 
-	dispatcher.db.AutoMigrate(&Task{}, &types.Person{})
-
 	dispatcher.tasks = make(map[uint]*Task, 0)
-
-	tasks := make([]Task, 0)
-	dispatcher.db.Find(&tasks)
+	taskRecords := dispatcher.db.LoadTasks()
 	providers := provider.All()
 
-	for _, task := range tasks {
-		provider := providers[task.Provider]
-		task.session = provider.RestoreSearchSession(dispatcher.log, task.CurrentState)
-		task.log = dispatcher.log
-		dispatcher.tasks[task.ID] = &task
+	for _, record := range taskRecords {
+		provider := providers[record.Provider]
+		session := provider.RestoreSearchSession(dispatcher.log, record.CurrentState)
+
+		task := newTask(session, &record)
+		dispatcher.tasks[task.ID] = task
 		log.Debugf("Task %s:#%d mode: %d", task.Provider, task.ID, task.Mode)
 
 		task.Execute()
@@ -56,19 +53,15 @@ func Init(log *logging.Logger) error {
 	return nil
 }
 
-func NewTask(session types.SearchSession, provider string) {
-	task := Task{log: dispatcher.log}
-	task.CurrentState = session.SaveState()
-	task.Provider = provider
-	task.session = session
-	task.Mode = ModeActive
-
-	dispatcher.db.Create(&task)
+func AppendTask(session types.SearchSession, provider string) {
+	record := types.TaskRecord{CurrentState: session.SaveState(), Provider: provider, Mode: ModeActive}
+	dispatcher.db.AppendTask(&record)
+	task := newTask(session, &record)
 
 	dispatcher.mutex.Lock()
 	defer dispatcher.mutex.Unlock()
 
-	dispatcher.tasks[task.ID] = &task
+	dispatcher.tasks[task.ID] = task
 	task.Execute()
 }
 
@@ -102,7 +95,7 @@ func taskAction(taskID uint, handler func(task *Task)) error {
 func StopTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Stop()
-		dispatcher.db.Save(&task)
+		dispatcher.db.UpdateTask(&task.TaskRecord)
 		dispatcher.log.Infof("Task #%d stopped", taskID)
 	})
 }
@@ -111,7 +104,7 @@ func DeleteTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Stop()
 		delete(dispatcher.tasks, taskID)
-		dispatcher.db.Delete(&task)
+		dispatcher.db.DeleteTask(&task.TaskRecord)
 		dispatcher.log.Infof("Task #%d deleted", taskID)
 	})
 }
@@ -119,7 +112,7 @@ func DeleteTask(taskID uint) error {
 func SuspendTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Suspend()
-		dispatcher.db.Save(&task)
+		dispatcher.db.UpdateTask(&task.TaskRecord)
 		dispatcher.log.Infof("Task #%d suspended", taskID)
 	})
 }
@@ -127,7 +120,7 @@ func SuspendTask(taskID uint) error {
 func RunTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Run()
-		dispatcher.db.Save(&task)
+		dispatcher.db.UpdateTask(&task.TaskRecord)
 		dispatcher.log.Infof("Task #%d started", taskID)
 	})
 }

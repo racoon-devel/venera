@@ -70,7 +70,7 @@ func NewTaskHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		dispatcher.NewTask(session, providerId)
+		dispatcher.AppendTask(session, providerId)
 		http.Redirect(w, r, "/", 300)
 	} else {
 		provider.ShowSearchPage(w)

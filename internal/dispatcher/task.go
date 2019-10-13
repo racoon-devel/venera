@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/ccding/go-logging/logging"
-	"github.com/jinzhu/gorm"
 
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
@@ -21,15 +20,12 @@ const (
 )
 
 type Task struct {
-	gorm.Model
-	CurrentState string
-	Provider     string
-	Mode         TaskMode
-	session      types.SearchSession `gorm:"-"`
-	wg           sync.WaitGroup      `gorm:"-"`
-	cancel       context.CancelFunc  `gorm:"-"`
-	log          *logging.Logger     `gorm:"-"`
-	timer        *time.Ticker        `gorm:"-"`
+	types.TaskRecord
+	session types.SearchSession
+	wg      sync.WaitGroup
+	cancel  context.CancelFunc
+	log     *logging.Logger
+	timer   *time.Ticker
 }
 
 type TaskInfo struct {
@@ -40,8 +36,14 @@ type TaskInfo struct {
 	Provider  string
 }
 
+func newTask(session types.SearchSession, record *types.TaskRecord) *Task {
+	task := &Task{session: session, log: dispatcher.log}
+	task.TaskRecord = *record
+	return task
+}
+
 func (ctx Task) GetInfo() TaskInfo {
-	ti := TaskInfo{Provider: ctx.Provider, ID: ctx.ID, Mode: ctx.Mode}
+	ti := TaskInfo{Provider: ctx.Provider, ID: ctx.ID, Mode: TaskMode(ctx.Mode)}
 	ti.Remaining = time.Now().Sub(ctx.CreatedAt)
 	ti.Status = ctx.session.Status()
 	return ti
@@ -97,6 +99,7 @@ func (task *Task) Suspend() {
 		task.log.Infof("Stopping task %s:#%d...", task.Provider, task.ID)
 		task.cancel()
 		task.wg.Wait()
+		task.poll()
 		task.log.Infof("Task %s:#%d stopped", task.Provider, task.ID)
 	}
 }
@@ -116,11 +119,10 @@ func (task *Task) Stop() {
 
 func (task *Task) poll() {
 	task.CurrentState = task.session.SaveState()
-	dispatcher.db.Save(&task)
+	dispatcher.db.UpdateTask(&task.TaskRecord)
 	matches := task.session.Results()
 	for _, match := range matches {
-		match.TaskID = task.ID
-		dispatcher.db.Create(match)
+		dispatcher.db.AppendPerson(match, task.ID)
 	}
 
 	dispatcher.log.Infof("polling: task %s:#%d got %d results", task.Provider, task.ID, len(matches))
