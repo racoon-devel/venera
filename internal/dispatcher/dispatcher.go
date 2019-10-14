@@ -12,6 +12,7 @@ import (
 	"racoondev.tk/gitea/racoon/venera/internal/storage"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"racoondev.tk/gitea/racoon/venera/internal/webui"
 )
 
 var dispatcher struct {
@@ -30,6 +31,10 @@ func Init(log *logging.Logger) error {
 	var err error
 	dispatcher.db, err = storage.Connect(utils.Configuration.GetConnectionString())
 	if err != nil {
+		return err
+	}
+
+	if err := webui.LoadTemplates(); err != nil {
 		return err
 	}
 

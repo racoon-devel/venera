@@ -1,25 +1,60 @@
 package webui
 
 import (
+	"html/template"
+	"io/ioutil"
 	"net/http"
+	"strings"
 
-	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
-	"racoondev.tk/gitea/racoon/venera/internal/provider"
+	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
-type mainContext struct {
-	Providers []string
-	Tasks     []dispatcher.TaskInfo
+var templates *template.Template
+
+type ResultContext struct {
+	Tasks      []types.TaskRecord
+	Results    []types.PersonRecord
+	TaskFilter uint
+	Ascending  bool
 }
 
-// MainPageHandler - show main admin page
-func MainPageHandler(w http.ResponseWriter, r *http.Request) {
-	var ctx mainContext
-	ctx.Providers = provider.GetAvailable()
-	ctx.Tasks = dispatcher.Describe()
-	mainTpl.Execute(w, &ctx)
+func LoadTemplates() error {
+	var tmplFiles []string
+	dir := utils.Configuration.Other.Content + "/templates"
+	files, err := ioutil.ReadDir(utils.Configuration.Other.Content + "/templates")
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		filename := file.Name()
+		if strings.HasSuffix(filename, ".html") {
+			tmplFiles = append(tmplFiles, dir+"/"+filename)
+		}
+	}
+
+	root := template.New("root").Funcs(template.FuncMap{"ts": tsToHumanReadable, "status": statusToHumanReadable})
+
+	templates, err = root.ParseFiles(tmplFiles...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func ShowError(w http.ResponseWriter, err error) {
-	errorTpl.Execute(w, err.Error())
+func DisplayMain(w http.ResponseWriter, context interface{}) {
+	templates.ExecuteTemplate(w, "main", context)
+}
+
+func DisplayError(w http.ResponseWriter, err error) {
+	templates.ExecuteTemplate(w, "error", err)
+}
+
+func DisplayNewTask(w http.ResponseWriter, provider string) {
+	templates.ExecuteTemplate(w, "new."+provider, nil)
+}
+
+func DisplayResults(w http.ResponseWriter, results *ResultContext) {
+	templates.ExecuteTemplate(w, "results", results)
 }

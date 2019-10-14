@@ -1,0 +1,36 @@
+{{ define "header" }}
+<html>
+	<head>
+		<link rel="stylesheet" href="/ui/styles/default.css">
+	</head>
+	<body>
+	<div id="header-wrapper">
+		<div id="header" class="container">
+			<div id="logo">
+				<h1><a href="#">Venera</a></h1>
+			</div>
+			<div id="menu">
+				<ul>
+					<li {{ if eq $ 0 }} class="current_page_item" {{ end }}><a href="/">Tasks</a></li>
+					<li {{ if eq $ 1 }} class="current_page_item" {{ end }}><a href="/results">Results</a></li>
+					<li {{ if eq $ 2 }} class="current_page_item" {{ end }}><a href="/task/new/tinder">New Tinder Search</a></li>
+                    <li {{ if eq $ 3 }} class="current_page_item" {{ end }}><a href="/task/new/vk">New VK Search</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<div id="header-featured">
+	</div>
+
+	<div id="banner-wrapper">
+		<div id="banner" class="container">
+			<h2>Если у вас одновременно есть свобода и любовь</h2>
+			<span>вам больше ничего не нужно. У вас все есть - то, ради чего дана жизнь. (с) </span>
+		</div>
+	</div>
+	
+	<div id="wrapper">
+		<div id="page" class="container">
+			<div id="content">
+{{ end }}
