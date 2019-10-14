@@ -466,7 +466,7 @@ ul.contact li a.icon-rss:before
 	#banner-wrapper
 {
 	overflow: hidden;
-	padding: 3em 0em;
+	padding: 1em 0em;
 	background: #ECECEC;
 }
 
@@ -490,7 +490,7 @@ ul.contact li a.icon-rss:before
 	margin: 0em;
 	padding: 0em;
 	font-weight: 400;
-	font-size: 3em;
+	font-size: 2em;
 	color: #555555;
 }
 
@@ -515,7 +515,7 @@ ul.contact li a.icon-rss:before
 #page
 {
 	overflow: hidden;
-	padding: 6em 0em;
+	padding: 2em 0em;
 	border-bottom: 2px solid #E3E3E3;
 }
 
@@ -682,7 +682,7 @@ ul.contact li a.icon-rss:before
 
 	#header-featured
 	{
-		height: 30em;
+		height: 10em;
 		background-image: url(../images/banner.jpg);
 		background-position: center;
 		background-size: cover;
@@ -866,6 +866,13 @@ ul.contact li a.icon-rss:before
 	text-transform: uppercase;
 	font-size: 1.2em;
 	color: #A2A2A2;
+}
+
+.task:hover
+{
+	border: 2px solid #FF9191; 
+	box-shadow: 0 0 15px rgb(255, 147, 147); 
+	border-radius: 5px; 
 }
 
 

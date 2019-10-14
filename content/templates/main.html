@@ -1,8 +1,8 @@
 {{ define "main" }}
-{{ template "header" }}
+{{ template "header" 0 }}
 <table>
-    <!-- {{range $i, $t := $.Tasks}}
-        <hr>
+    {{range $i, $t := $.Tasks}}
+        <td width="50%" class="task">
         <a href="/task/{{$t.ID}}">Task #{{$t.ID}} [ {{$t.Provider}} ]</a><br>
         <small>{{ts $t.Remaining }}</small><br>
         <small>Status: {{status $t.Status}}</small><br>
@@ -16,7 +16,8 @@
         <td><a href="/task/stop/{{$t.ID}}">Stop</a></td>
         <td><a href="/task/delete/{{$t.ID}}">Delete</a></td>
         </table>
-    {{- end}} -->
+        </td>
+    {{- end}}
 </table>
 {{ template "footer" }}
 {{ end }}

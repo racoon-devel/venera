@@ -2,7 +2,6 @@ package tinder
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,29 +10,6 @@ import (
 
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
-)
-
-var (
-	formTpl = template.Must(template.New("tinder").Parse(`
-	<html>
-	<head>
-		<link rel="stylesheet" href="/styles/default.css">
-	</head>
-	<body>
-	<h2>New task</h2>
-	<form action="/task/new/tinder" method="POST">
-		User:<input type="text" name="user"><br>
-		Password:<input type="password" name="password"><br>
-		Token:<input type="token" name="token"><br>
-		<a href="https://www.facebook.com/v2.6/dialog/oauth?redirect_uri=fb464891386855067%3A%2F%2Fauthorize%2F&scope=user_birthday,user_photos,user_education_history,email,user_relationship_details,user_friends,user_work_history,user_likes&response_type=token%2Csigned_request&client_id=464891386855067">Get Token</a><br>
-		Age:<input type="text" name="ageFrom"> - <input type="text" name="ageTo"><br>
-		Likes:<textarea name="likes" rows="5" cols="100"></textarea><br>
-		Dislikes:<textarea name="dislikes" rows="5" cols="100"></textarea><br>
-		<input type="submit" value="Submit">
-	</form>
-	</body>
-	</html>
-	`))
 )
 
 func getSearchSettings(r *http.Request) (*searchSettings, error) {
@@ -95,11 +71,6 @@ func getSearchSettings(r *http.Request) (*searchSettings, error) {
 	ctx.AgeTo = uint(u)
 
 	return &ctx, nil
-}
-
-// ShowSearchPage - show search parameters form
-func (ctx *TinderProvider) ShowSearchPage(w http.ResponseWriter) {
-	formTpl.Execute(w, nil)
 }
 
 func (ctx *TinderProvider) GetSearchSession(log *logging.Logger, r *http.Request) (types.SearchSession, error) {

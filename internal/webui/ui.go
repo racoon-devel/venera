@@ -1,22 +1,18 @@
 package webui
 
 import (
-	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
-	//"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
-	"racoondev.tk/gitea/racoon/venera/internal/provider"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
-var Templates *template.Template
+var templates *template.Template
 
-type mainContext struct {
-	Providers []string
-	//Tasks     []dispatcher.TaskInfo
+type UIContext struct {
+	PageSelected int
 }
 
 func LoadTemplates() error {
@@ -35,7 +31,7 @@ func LoadTemplates() error {
 
 	root := template.New("root").Funcs(template.FuncMap{"ts": tsToHumanReadable, "status": statusToHumanReadable})
 
-	Templates, err = root.ParseFiles(tmplFiles...)
+	templates, err = root.ParseFiles(tmplFiles...)
 	if err != nil {
 		return err
 	}
@@ -43,15 +39,14 @@ func LoadTemplates() error {
 	return nil
 }
 
-// MainPageHandler - show main admin page
-func MainPageHandler(w http.ResponseWriter, r *http.Request) {
-	var ctx mainContext
-	ctx.Providers = provider.GetAvailable()
-	// ctx.Tasks = dispatcher.Describe()
-	fmt.Println(Templates.DefinedTemplates())
-	Templates.ExecuteTemplate(w, "main", nil)
+func DisplayMain(w http.ResponseWriter, context interface{}) {
+	templates.ExecuteTemplate(w, "main", context)
 }
 
-func ShowError(w http.ResponseWriter, err error) {
-	errorTpl.Execute(w, err.Error())
+func DisplayError(w http.ResponseWriter, err error) {
+	templates.ExecuteTemplate(w, "error", err)
+}
+
+func DisplayNewTask(w http.ResponseWriter, provider string) {
+	templates.ExecuteTemplate(w, "new."+provider, nil)
 }

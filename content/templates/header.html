@@ -11,9 +11,9 @@
 			</div>
 			<div id="menu">
 				<ul>
-					<li class="current_page_item"><a href="/" accesskey="1" title="">Задачи</a></li>
-                    <li><a href="/task/new/tinder" accesskey="2">Поиск в Tinder</a></li>
-                    <li><a href="/task/new/vk" accesskey="3">Поиск в VK</a></li>
+					<li {{ if eq $ 0 }} class="current_page_item" {{ end }}><a href="/" accesskey="1" title="">Tasks</a></li>
+                    <li {{ if eq $ 1 }} class="current_page_item" {{ end }}><a href="/task/new/tinder" accesskey="2">New Tinder Search</a></li>
+                    <li {{ if eq $ 2 }} class="current_page_item" {{ end }}><a href="/task/new/vk" accesskey="3">New VK Search</a></li>
 				</ul>
 			</div>
 		</div>

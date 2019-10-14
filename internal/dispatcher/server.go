@@ -1,4 +1,4 @@
-package server
+package dispatcher
 
 import (
 	"net/http"
@@ -9,7 +9,6 @@ import (
 	"github.com/ccding/go-logging/logging"
 	"github.com/gorilla/mux"
 
-	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
 	"racoondev.tk/gitea/racoon/venera/internal/provider"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"racoondev.tk/gitea/racoon/venera/internal/webui"
@@ -58,7 +57,7 @@ func setupPanicHandler(next http.Handler) http.Handler {
 	})
 }
 
-func NewTaskHandler(w http.ResponseWriter, r *http.Request) {
+func newTaskHandler(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 	providerId := parts[len(parts)-1]
 	provider := provider.All()[providerId]
@@ -66,14 +65,14 @@ func NewTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		session, err := provider.GetSearchSession(log, r)
 		if err != nil {
-			webui.ShowError(w, err)
+			webui.DisplayError(w, err)
 			return
 		}
 
-		dispatcher.AppendTask(session, providerId)
+		AppendTask(session, providerId)
 		http.Redirect(w, r, "/", 300)
 	} else {
-		provider.ShowSearchPage(w)
+		webui.DisplayNewTask(w, providerId)
 	}
 }
 
@@ -81,14 +80,14 @@ func controlTaskHandler(w http.ResponseWriter, r *http.Request, handler taskItem
 	vars := mux.Vars(r)
 	id, err := strconv.ParseUint(vars["task"], 10, 32)
 	if err != nil {
-		webui.ShowError(w, err)
+		webui.DisplayError(w, err)
 		return
 
 	}
 
 	err = handler(uint(id))
 	if err != nil {
-		webui.ShowError(w, err)
+		webui.DisplayError(w, err)
 		return
 	}
 
@@ -98,29 +97,41 @@ func controlTaskHandler(w http.ResponseWriter, r *http.Request, handler taskItem
 func stopTaskHandler(w http.ResponseWriter, r *http.Request) {
 	controlTaskHandler(w, r, func(taskId uint) error {
 		log.Debugf("Stopping task %d", taskId)
-		return dispatcher.StopTask(uint(taskId))
+		return StopTask(uint(taskId))
 	})
 }
 
 func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	controlTaskHandler(w, r, func(taskId uint) error {
 		log.Debugf("Deleting task %d", taskId)
-		return dispatcher.DeleteTask(uint(taskId))
+		return DeleteTask(uint(taskId))
 	})
 }
 
 func suspendTaskHandler(w http.ResponseWriter, r *http.Request) {
 	controlTaskHandler(w, r, func(taskId uint) error {
 		log.Debugf("Suspending task %d", taskId)
-		return dispatcher.SuspendTask(uint(taskId))
+		return SuspendTask(uint(taskId))
 	})
 }
 
 func runTaskHandler(w http.ResponseWriter, r *http.Request) {
 	controlTaskHandler(w, r, func(taskId uint) error {
 		log.Debugf("Running task %d", taskId)
-		return dispatcher.RunTask(uint(taskId))
+		return RunTask(uint(taskId))
 	})
+}
+
+type mainContext struct {
+	Providers []string
+	Tasks     []TaskInfo
+}
+
+func mainHandler(w http.ResponseWriter, r *http.Request) {
+	var ctx mainContext
+	ctx.Providers = provider.GetAvailable()
+	ctx.Tasks = Describe()
+	webui.DisplayMain(w, &ctx)
 }
 
 // InstanceRouter - creation full HTTP handler, it is useful for tests
@@ -129,11 +140,11 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/", webui.MainPageHandler)
+	router.HandleFunc("/", mainHandler)
 
 	providers := provider.All()
 	for id, _ := range providers {
-		router.HandleFunc("/task/new/"+id, NewTaskHandler).Methods("GET", "POST")
+		router.HandleFunc("/task/new/"+id, newTaskHandler).Methods("GET", "POST")
 	}
 
 	router.HandleFunc("/task/stop/{task}", stopTaskHandler).Methods("GET")
@@ -150,7 +161,7 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 }
 
 // Run start HTTP server
-func Run(logger *logging.Logger) {
+func RunServer(logger *logging.Logger) {
 
 	router := InstanceRouter(logger)
 

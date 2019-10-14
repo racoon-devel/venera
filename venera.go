@@ -9,7 +9,6 @@ import (
 	"github.com/ccding/go-logging/logging"
 
 	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
-	"racoondev.tk/gitea/racoon/venera/internal/server"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
@@ -50,5 +49,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	server.Run(logger)
+	dispatcher.RunServer(logger)
 }
