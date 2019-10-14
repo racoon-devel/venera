@@ -37,6 +37,7 @@ type PersonRecord struct {
 	TaskID      uint
 	Rating      int `sql:"index"`
 	Description string
+	Person      Person `gorm:"-"`
 }
 
 func (self SearchSettings) Validate() error {

@@ -141,6 +141,7 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/", mainHandler)
+	router.HandleFunc("/results", resultsHandler)
 
 	providers := provider.All()
 	for id, _ := range providers {

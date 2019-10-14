@@ -6,13 +6,17 @@ import (
 	"net/http"
 	"strings"
 
+	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
 var templates *template.Template
 
-type UIContext struct {
-	PageSelected int
+type ResultContext struct {
+	Tasks      []types.TaskRecord
+	Results    []types.PersonRecord
+	TaskFilter uint
+	Ascending  bool
 }
 
 func LoadTemplates() error {
@@ -49,4 +53,8 @@ func DisplayError(w http.ResponseWriter, err error) {
 
 func DisplayNewTask(w http.ResponseWriter, provider string) {
 	templates.ExecuteTemplate(w, "new."+provider, nil)
+}
+
+func DisplayResults(w http.ResponseWriter, results *ResultContext) {
+	templates.ExecuteTemplate(w, "results", results)
 }
