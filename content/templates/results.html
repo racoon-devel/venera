@@ -16,30 +16,44 @@
                 <option value="asc" {{ if eq $.Ascending true }} selected {{ end }}>Ascending</option>
             </select>
         </td>
+        <td>View mode:
+                <select name="mode">
+                    <option value="0" {{ if eq $.ViewMode 0 }} selected {{ end }}>List</option>
+                    <option value="1" {{ if eq $.ViewMode 1 }} selected {{ end }}>Album</option>
+                </select>
+            </td>
+        <td>
+            Page:
+            <select name="page">
+                    {{range $i, $n := $.Pages }}
+                    <option value="{{ $n }}" {{ if eq $.Page $n }} selected {{ end }}>{{ $n }}</option>
+                    {{- end}}
+            </select>
+        </td>
         <td>
             <button type="submit">Filter</button>
         </td>
     </table>
 </form>
+<p><b>Total:</b>{{ $.Total }}</p>
 <table>
-<col width ="30%">
-    
+<col width ="50%">   
+<col width ="50%">   
 {{range $i, $res := $.Results }}
+{{ if eq $.ViewMode 1 }}
+{{ $m := mod2 $i }}
+{{ if eq $m 0 }}
 <tr>
-    <td><img width="80%" heigth="5%" src="{{ index $res.Person.Photo 0 }}"></td>
-    <td valign="top">
-        <table>
-        <tr><td><a href="#"><h4>{{ $res.Person.Name }}</h4></a></td></tr>
-        <tr><td><u>Rating:</u> {{ $res.Rating }}</td></tr>
-        <tr><td><u>Description:</u> {{ $res.Person.Bio }}</td></tr>
-        <tr><td>
-                {{range $i, $foto := $res.Person.Photo }}
-                <a href="{{ $foto }}">Foto #{{ $i }} </a>
-                {{ end }}
-        </td></tr>
-        </table>
-    </td>
+{{ end }}
+<td valign="top">
+    <a href="/result?id={{$res.ID}}"><img width="95%"  src="{{ index $res.Person.Photo 0 }}"></a>
+</td>
+{{ if eq $m 1 }}
 </tr>
+{{ end }}
+{{ else }}
+{{ template "result" $res }}
+{{ end }}
 {{- end}}
 </table>
 {{ template "footer" }}

@@ -13,10 +13,14 @@ import (
 var templates *template.Template
 
 type ResultContext struct {
+	Pages      []uint
+	Page       uint
+	Total      uint
 	Tasks      []types.TaskRecord
 	Results    []types.PersonRecord
 	TaskFilter uint
 	Ascending  bool
+	ViewMode   uint
 }
 
 func LoadTemplates() error {
@@ -33,7 +37,11 @@ func LoadTemplates() error {
 		}
 	}
 
-	root := template.New("root").Funcs(template.FuncMap{"ts": tsToHumanReadable, "status": statusToHumanReadable})
+	root := template.New("root").Funcs(template.FuncMap{
+		"ts":     tsToHumanReadable,
+		"status": statusToHumanReadable,
+		"mod2":   mod2,
+	})
 
 	templates, err = root.ParseFiles(tmplFiles...)
 	if err != nil {

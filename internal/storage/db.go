@@ -53,9 +53,10 @@ func (self *Storage) AppendPerson(person *types.Person, taskID uint) {
 	self.db.Create(&record)
 }
 
-func (self *Storage) LoadPersons(taskID uint, ascending bool) ([]types.PersonRecord, error) {
+func (self *Storage) LoadPersons(taskID uint, ascending bool, limit uint, offset uint) ([]types.PersonRecord, uint, error) {
 	persons := make([]types.PersonRecord, 0)
 	ctx := self.db
+
 	if ascending {
 		ctx = ctx.Order("rating asc")
 	} else {
@@ -66,14 +67,18 @@ func (self *Storage) LoadPersons(taskID uint, ascending bool) ([]types.PersonRec
 		ctx = ctx.Where("task_id = ?", taskID)
 	}
 
+	var count uint
+	ctx.Model(&types.PersonRecord{}).Count(&count)
+
+	ctx = ctx.Limit(limit).Offset(offset)
 	ctx.Find(&persons)
 
 	for i, _ := range persons {
 		err := json.Unmarshal([]byte(persons[i].Description), &persons[i].Person)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 	}
 
-	return persons, nil
+	return persons, count, nil
 }

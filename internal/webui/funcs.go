@@ -46,3 +46,7 @@ func statusToHumanReadable(status types.SessionStatus) string {
 		return "Unknown"
 	}
 }
+
+func mod2(n int) int {
+	return n % 2
+}
