@@ -2,7 +2,10 @@ package webui
 
 import (
 	"fmt"
+	"html/template"
 	"time"
+
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
@@ -49,4 +52,12 @@ func statusToHumanReadable(status types.SessionStatus) string {
 
 func mod2(n int) int {
 	return n % 2
+}
+
+func inc(n uint) uint {
+	return n + 1
+}
+
+func hightlight(text string, matches []utils.TextMatch) template.HTML {
+	return template.HTML(utils.Highlight(text, matches, "<mark>", "</mark>"))
 }

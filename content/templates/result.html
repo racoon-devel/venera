@@ -1,17 +1,19 @@
 {{ define "result" }}
-<tr>
-    <td><img width="80%" heigth="5%" src="{{ index $.Person.Photo 0 }}"></td>
-    <td valign="top">
-        <table>
-        <tr><td><a href="#"><h4>{{ $.Person.Name }}</h4></a></td></tr>
-        <tr><td><u>Rating:</u> {{ $.Rating }}</td></tr>
-        <tr><td><u>Description:</u> {{ $.Person.Bio }}</td></tr>
-        <tr><td>
-                {{range $i, $foto := $.Person.Photo }}
-                <a href="{{ $foto }}">Foto #{{ $i }} </a>
-                {{ end }}
-        </td></tr>
-        </table>
-    </td>
-</tr>
+{{ template "header" 1 }}
+<table>
+    <col width ="50%">   
+    <col width ="50%">   
+    {{ template "item" $ }}
+    {{range $i, $foto := $.Person.Photo }}
+    {{ $m := mod2 $i}}
+    {{ if eq $m 0 }}
+    <tr>
+    {{ end }}
+    <td valign="top"><a href="{{$foto}}"><img width="95%" src="{{$foto}}"></a></td>
+    {{ if eq $m 1 }}
+    </tr>
+    {{ end }}
+    {{- end }}
+</table>
+{{ template "footer" }}
 {{ end }}

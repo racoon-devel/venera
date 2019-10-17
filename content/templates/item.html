@@ -1,0 +1,32 @@
+{{ define "item" }}
+<tr>
+    <td><img width="90%" heigth="5%" src="{{ index $.Person.Photo 0 }}"></td>
+    <td valign="top">
+        <table>
+        <tr><td><a href="/result/{{$.ID}}"><h4>{{ $.Person.Name }}</h4></a></td></tr>
+        <tr><td><u>Age:</u> {{ $.Person.Age }}</td></tr>
+        <tr><td><u>Rating:</u> {{ $.Rating }}</td></tr>
+        {{ if ne $.Person.Job "" }}
+        <tr><td><u>Job:</u> {{ $.Person.Job }}</td></tr>
+        {{ end }}
+        {{ if ne $.Person.School "" }}
+        <tr><td><u>School:</u> {{ $.Person.School }}</td></tr>
+        {{ end }}
+        <tr><td><u>Description:</u> {{ highlight $.Person.Bio $.Person.BioMatches }}</td></tr>
+        <tr><td>
+                {{range $i, $foto := $.Person.Photo }}
+                <a href="{{ $foto }}">Foto #{{ $i }} </a>
+                {{ end }}
+        </td></tr>
+        </table>
+        <table>
+                <tr>
+                    <td><a class="button button-small" href="/result/{{$.ID}}/delete">DELETE</a></td>
+                    {{ range $i, $a := $.Actions }}
+                    <td><a class="button button-small" href="{{ $a.Link }}">{{ $a.Title }}</a></td>
+                    {{ end }}
+                </tr>
+        </table>
+    </td>
+</tr>
+{{ end }}

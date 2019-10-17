@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/ccding/go-logging/logging"
@@ -112,4 +113,63 @@ func compile(keyword string) (*regexp.Regexp, error) {
 	expr = strings.ReplaceAll(expr, "*", `[\p{L}]*`)
 	expr = strings.ReplaceAll(expr, " ", `[\s]+`)
 	return regexp.Compile(expr)
+}
+
+type point struct {
+	pos  int
+	open bool
+}
+
+func getIntersection(matches []TextMatch) []TextMatch {
+	points := make([]point, 0, len(matches)*2)
+	for _, match := range matches {
+		points = append(points, point{pos: match.Begin, open: true},
+			point{pos: match.End, open: false})
+	}
+
+	sort.SliceStable(points, func(i, j int) bool {
+		return points[i].pos < points[j].pos
+	})
+
+	result := make([]TextMatch, 0)
+	counter := 0
+	current := TextMatch{}
+
+	for _, point := range points {
+		if counter == 0 {
+			current.Begin = point.pos
+		}
+
+		if !point.open {
+			counter--
+			if counter == 0 {
+				current.End = point.pos - 1
+				result = append(result, current)
+			}
+		} else {
+			counter++
+		}
+	}
+	return result
+}
+
+func Highlight(text string, matches []TextMatch, begin string, end string) string {
+	if len(matches) == 0 || len(text) == 0 {
+		return text
+	}
+
+	m := getIntersection(matches)
+	output := ""
+	var prev int
+
+	for _, point := range m {
+		output += text[prev:point.Begin] + begin + text[point.Begin:point.End+1] + end
+		prev = point.End + 1
+	}
+
+	if prev < len(text)-1 {
+		output += text[prev:]
+	}
+
+	return output
 }

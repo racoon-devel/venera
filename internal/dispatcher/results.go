@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/gorilla/mux"
+	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/webui"
 )
 
@@ -39,10 +41,19 @@ func resultsHandler(w http.ResponseWriter, r *http.Request) {
 	res.Tasks = dispatcher.db.LoadTasks()
 
 	var err error
-	res.Results, res.Total, err = dispatcher.db.LoadPersons(res.TaskFilter, res.Ascending, resultsPerPage, res.Page*resultsPerPage)
+	var persons []types.PersonRecord
+	persons, res.Total, err = dispatcher.db.LoadPersons(res.TaskFilter, res.Ascending, resultsPerPage, res.Page*resultsPerPage)
 	if err != nil {
 		webui.DisplayError(w, err)
 		return
+	}
+
+	res.Results = make([]*webui.ItemContext, len(persons))
+	for i := 0; i < len(persons); i++ {
+		item := webui.ItemContext{}
+		item.PersonRecord = &persons[i]
+		wrapItem(&item)
+		res.Results[i] = &item
 	}
 
 	pages := res.Total / resultsPerPage
@@ -56,4 +67,46 @@ func resultsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	webui.DisplayResults(w, &res)
+}
+
+func wrapItem(item *webui.ItemContext) {
+	prov := getTaskProvider(item.TaskID)
+	if prov == nil {
+		return
+	}
+
+	item.Actions = prov.GetResultActions(item.PersonRecord)
+}
+
+func resultHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseUint(vars["result"], 10, 32)
+	if err != nil {
+		webui.DisplayError(w, err)
+		return
+	}
+
+	result, err := dispatcher.db.LoadPerson(uint(id))
+	if err != nil {
+		webui.DisplayError(w, err)
+		return
+	}
+
+	item := webui.ItemContext{}
+	item.PersonRecord = result
+	wrapItem(&item)
+
+	webui.DisplayResult(w, &item)
+}
+
+func deleteHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseUint(vars["result"], 10, 32)
+	if err != nil {
+		webui.DisplayError(w, err)
+		return
+	}
+
+	dispatcher.db.DeletePerson(uint(id))
+	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 }

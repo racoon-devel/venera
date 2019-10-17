@@ -6,17 +6,29 @@ import (
 	"github.com/ccding/go-logging/logging"
 )
 
-type testData struct {
+const (
+	openTag  = "<b>"
+	closeTag = "</b>"
+)
+
+type processorTestCase struct {
 	positive        []string
 	negative        []string
 	text            string
 	mustFail        bool
 	positiveMatches []string
 	negativeMatches []string
+	output          string
+}
+
+type highlightTestCase struct {
+	text      string
+	matches   []TextMatch
+	processed string
 }
 
 var (
-	tests = []testData{
+	processorTestCases = []processorTestCase{
 		{
 			positive: []string{
 				"смутн* врем*",
@@ -38,6 +50,7 @@ var (
 				"кровь",
 				"по колено",
 			},
+			output: "<b>Смутное время</b>! Призрак свободы на коне, кровь по <b>колено</b>, словно в каком-то диком сне. - <b>Смутные времена</b>",
 		},
 		{
 			positive: []string{
@@ -51,6 +64,7 @@ var (
 				"весь",
 				"компот",
 			},
+			output: "<b>Енот</b> <b>выпил</b> <b>весь</b> <b>компот</b>",
 		},
 		{
 			positive: []string{
@@ -71,11 +85,91 @@ var (
 			mustFail: true,
 		},
 	}
+
+	highlightTestCases = []highlightTestCase{
+		{
+			text: "Racoon is the mammal-size animal",
+			matches: []TextMatch{
+				{Begin: 7, End: 9},
+				{Begin: 21, End: 25},
+			},
+			processed: "Racoon <b>is</b> the mammal-<b>size</b> animal",
+		},
+		{
+			text: "Racoon is the mammal-size animal",
+			matches: []TextMatch{
+				{Begin: 21, End: 25},
+				{Begin: 7, End: 9},
+			},
+			processed: "Racoon <b>is</b> the mammal-<b>size</b> animal",
+		},
+		{
+			text: "Racoon is the mammal-size animal",
+			matches: []TextMatch{
+				{Begin: 21, End: 25},
+				{Begin: 26, End: 32},
+				{Begin: 7, End: 9},
+			},
+			processed: "Racoon <b>is</b> the mammal-<b>size</b> <b>animal</b>",
+		},
+		{
+			text:      "Racoon is the mammal-size animal",
+			processed: "Racoon is the mammal-size animal",
+		},
+		{
+			text: "Racoon is the mammal-size animal",
+			matches: []TextMatch{
+				{Begin: 7, End: 25},
+				{Begin: 10, End: 13},
+				{Begin: 14, End: 20},
+			},
+			processed: "Racoon <b>is the mammal-size</b> animal",
+		},
+		{
+			text: "Racoon is the mammal-size animal",
+			matches: []TextMatch{
+				{Begin: 7, End: 25},
+				{Begin: 10, End: 13},
+				{Begin: 14, End: 25},
+			},
+			processed: "Racoon <b>is the mammal-size</b> animal",
+		},
+		{
+			text: "Racoon is the mammal-size animal",
+			matches: []TextMatch{
+				{Begin: 2, End: 9},
+				{Begin: 21, End: 32},
+				{Begin: 0, End: 6},
+				{Begin: 14, End: 25},
+			},
+			processed: "<b>Racoon is</b> the <b>mammal-size animal</b>",
+		},
+		{
+			text: "Racoon is the mammal-size animal",
+			matches: []TextMatch{
+				{Begin: 0, End: 32},
+			},
+			processed: "<b>Racoon is the mammal-size animal</b>",
+		},
+		{
+			text: "Racoon is the mammal-size animal",
+			matches: []TextMatch{
+				{Begin: 4, End: 13},
+				{Begin: 0, End: 32},
+				{Begin: 10, End: 29},
+				{Begin: 2, End: 18},
+				{Begin: 30, End: 32},
+				{Begin: 15, End: 17},
+				{Begin: 28, End: 32},
+			},
+			processed: "<b>Racoon is the mammal-size animal</b>",
+		},
+	}
 )
 
 func TestTextProcessor(t *testing.T) {
 	log, _ := logging.SimpleLogger("test")
-	for i, test := range tests {
+	for i, test := range processorTestCases {
 		proc, err := NewTextProcessor(log, test.positive, test.negative)
 		if test.mustFail && err == nil {
 			t.Errorf("Test %d must fail", i+1)
@@ -98,6 +192,20 @@ func TestTextProcessor(t *testing.T) {
 			t.Errorf("Test %d: '%+v' != '%+v'", i+1, getStringSlice(test.text, neg), test.negativeMatches)
 		}
 
+		highlighted := Highlight(test.text, pos, openTag, closeTag)
+		if highlighted != test.output {
+			t.Errorf("Test %d: '%s' != '%s'", i+1, highlighted, test.output)
+		}
+
+	}
+}
+
+func TestHighlight(t *testing.T) {
+	for i, test := range highlightTestCases {
+		result := Highlight(test.text, test.matches, openTag, closeTag)
+		if result != test.processed {
+			t.Errorf("TestCase #%d: Results are not equal: '%s' != '%s'", i+1, result, test.processed)
+		}
 	}
 }
 

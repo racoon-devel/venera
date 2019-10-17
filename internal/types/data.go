@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"html/template"
 
 	"github.com/jinzhu/gorm"
 
@@ -30,6 +31,14 @@ type Person struct {
 	Bio        string
 	BioMatches []utils.TextMatch
 	Photo      []string
+	Job        string
+	School     string
+	Age        uint
+}
+
+type Action struct {
+	Link  template.URL
+	Title string
 }
 
 type PersonRecord struct {

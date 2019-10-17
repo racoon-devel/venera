@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -81,4 +82,26 @@ func (self *Storage) LoadPersons(taskID uint, ascending bool, limit uint, offset
 	}
 
 	return persons, count, nil
+}
+
+func (self *Storage) LoadPerson(personID uint) (*types.PersonRecord, error) {
+	record := types.PersonRecord{}
+	self.db.First(&record, personID)
+
+	if record.Description == "" {
+		return nil, fmt.Errorf("Result has been deleted")
+	}
+
+	err := json.Unmarshal([]byte(record.Description), &record.Person)
+	if err != nil {
+		return nil, err
+	}
+
+	return &record, nil
+}
+
+func (self *Storage) DeletePerson(personID uint) {
+	record := types.PersonRecord{}
+	record.ID = personID
+	self.db.Delete(&record)
 }

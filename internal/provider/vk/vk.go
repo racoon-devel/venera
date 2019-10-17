@@ -24,3 +24,7 @@ func (ctx VkProvider) RestoreSearchSession(log *logging.Logger, state string) ty
 	session.LoadState(state)
 	return &session
 }
+
+func (ctx VkProvider) GetResultActions(result *types.PersonRecord) []types.Action {
+	return []types.Action{}
+}

@@ -58,6 +58,23 @@ func Init(log *logging.Logger) error {
 	return nil
 }
 
+func getTaskProvider(taskID uint) types.Provider {
+	dispatcher.mutex.Lock()
+	defer dispatcher.mutex.Unlock()
+
+	task, ok := dispatcher.tasks[taskID]
+	if !ok {
+		return nil
+	}
+
+	prov, err := provider.Get(task.Provider)
+	if err != nil {
+		return nil
+	}
+
+	return prov
+}
+
 func AppendTask(session types.SearchSession, provider string) {
 	record := types.TaskRecord{CurrentState: session.SaveState(), Provider: provider, Mode: ModeActive}
 	dispatcher.db.AppendTask(&record)

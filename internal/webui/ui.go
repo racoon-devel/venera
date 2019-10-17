@@ -12,12 +12,17 @@ import (
 
 var templates *template.Template
 
+type ItemContext struct {
+	*types.PersonRecord
+	Actions []types.Action
+}
+
 type ResultContext struct {
 	Pages      []uint
 	Page       uint
 	Total      uint
 	Tasks      []types.TaskRecord
-	Results    []types.PersonRecord
+	Results    []*ItemContext
 	TaskFilter uint
 	Ascending  bool
 	ViewMode   uint
@@ -38,9 +43,11 @@ func LoadTemplates() error {
 	}
 
 	root := template.New("root").Funcs(template.FuncMap{
-		"ts":     tsToHumanReadable,
-		"status": statusToHumanReadable,
-		"mod2":   mod2,
+		"ts":        tsToHumanReadable,
+		"status":    statusToHumanReadable,
+		"mod2":      mod2,
+		"inc":       inc,
+		"highlight": hightlight,
 	})
 
 	templates, err = root.ParseFiles(tmplFiles...)
@@ -65,4 +72,8 @@ func DisplayNewTask(w http.ResponseWriter, provider string) {
 
 func DisplayResults(w http.ResponseWriter, results *ResultContext) {
 	templates.ExecuteTemplate(w, "results", results)
+}
+
+func DisplayResult(w http.ResponseWriter, result *ItemContext) {
+	templates.ExecuteTemplate(w, "result", result)
 }

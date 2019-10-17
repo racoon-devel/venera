@@ -30,7 +30,7 @@
                     {{- end}}
             </select>
         </td>
-        <td>
+        <td valign="bottom">
             <button type="submit">Filter</button>
         </td>
     </table>
@@ -46,15 +46,17 @@
 <tr>
 {{ end }}
 <td valign="top">
-    <a href="/result?id={{$res.ID}}"><img width="95%"  src="{{ index $res.Person.Photo 0 }}"></a>
+    <a href="/result/{{$res.ID}}"><img width="95%"  src="{{ index $res.Person.Photo 0 }}"></a>
 </td>
 {{ if eq $m 1 }}
 </tr>
 {{ end }}
 {{ else }}
-{{ template "result" $res }}
+{{ template "item" $res }}
 {{ end }}
 {{- end}}
 </table>
+<p align="right"><a class="button" 
+    href="/results?mode={{$.ViewMode}}&page={{inc $.Page}}&order={{ if eq $.Ascending false }}desc{{ else }}asc{{end}}&task={{$.TaskFilter}}">NEXT</a></p>
 {{ template "footer" }}
 {{ end }}
