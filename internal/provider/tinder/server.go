@@ -28,7 +28,3 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	body, _ := json.Marshal(&response)
 	w.Write(body)
 }
-
-func superlikeHandler(w http.ResponseWriter, r *http.Request) {
-
-}
