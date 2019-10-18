@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"html/template"
 
+	"github.com/gorilla/mux"
+
 	"github.com/ccding/go-logging/logging"
 
 	"racoondev.tk/gitea/racoon/venera/internal/types"
@@ -11,13 +13,17 @@ import (
 
 type searchSettings struct {
 	types.SearchSettings
-	User     string
-	Password string
-	Token    string
+	Tel      string
+	APIToken string
 }
 
 // TinderProvider - provider for searching people in Tinder
 type TinderProvider struct {
+}
+
+func (ctx TinderProvider) SetupRouter(router *mux.Router) {
+	router.HandleFunc("/login", loginHandler).Methods("GET")
+	router.HandleFunc("/superlike/{user}", superlikeHandler).Methods("GET")
 }
 
 func (ctx TinderProvider) RestoreSearchSession(log *logging.Logger, state string) types.SearchSession {

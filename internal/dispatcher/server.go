@@ -70,7 +70,7 @@ func newTaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		AppendTask(session, providerId)
-		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else {
 		webui.DisplayNewTask(w, providerId)
 	}
@@ -146,7 +146,8 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	router.HandleFunc("/result/{result}/delete", deleteHandler).Methods("GET")
 
 	providers := provider.All()
-	for id, _ := range providers {
+	for id, prov := range providers {
+		prov.SetupRouter(router.PathPrefix("/" + id).Subrouter())
 		router.HandleFunc("/task/new/"+id, newTaskHandler).Methods("GET", "POST")
 	}
 

@@ -25,10 +25,10 @@ const (
 
 func (session *tinderSearchSession) setup(ctx context.Context) {
 	session.log.Debugf("tinder: authentification...")
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
 
-	session.repeat(ctx, func() error {
-		return session.api.Authenticate(session.state.Search.Token)
-	})
+	session.api.SetAPIToken(session.state.Search.APIToken)
 
 	session.log.Debugf("tinder: update location...")
 

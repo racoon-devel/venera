@@ -1,17 +1,36 @@
 {{ define "new.tinder" }}
 {{ template "header" 2 }}
-<form action="/task/new/tinder" method="POST">
+<script>
+function GetCode() {
+            var inputs = document.getElementById("task-form").elements;
+            var xmlHttp = new XMLHttpRequest();
+            var tel = inputs["tel"].value
+            xmlHttp.open("GET", encodeURI("/tinder/login?tel=" + tel), true);
+            xmlHttp.send();
+            xmlHttp.onreadystatechange = processRequest;
+            function processRequest() {
+                if ( xmlHttp.readyState == 4 ) {
+                    if ( xmlHttp.status == 200 ) {
+                       inputs["code"].hidden = false
+                       var resp = JSON.parse(xmlHttp.responseText);
+                       inputs["login_token"].value = resp["login_token"]
+                    }
+                }
+            }
+        }
+
+</script>
+<form action="/task/new/tinder" method="POST" id="task-form">
     <table>
-    <tr><td>User</td><td><input type="text" name="user"></td></tr>
-    <tr><td>Password</td><td><input type="password" name="password"></td></tr>
-    <tr><td>Token</td><td><input type="text" name="token">
-        <a href="https://www.facebook.com/v2.6/dialog/oauth?redirect_uri=fb464891386855067%3A%2F%2Fauthorize%2F&scope=user_birthday,user_photos,user_education_history,email,user_relationship_details,user_friends,user_work_history,user_likes&response_type=token%2Csigned_request&client_id=464891386855067">Get Token</a></td></tr>
-    
+    <tr><td>Tel Number</td><td><input type="text" name="tel"></td></tr>
+    <tr><td>Code:</td><td><input type="text" name="code" hidden="true"></td></tr>
+    <tr><td colspan="2"><button type="button" name="getcode" onclick="GetCode();">Get Code to phone</button></td></tr>
     <tr><td>Age</td><td><input type="text" name="ageFrom"> - <input type="text" name="ageTo"></td></tr>
     <tr><td colspan="2"> Likes<textarea name="likes" rows="5" cols="100"></textarea></td></tr>
     <tr><td colspan="2"> Dislikes<textarea name="dislikes" rows="5" cols="100"></textarea></td></tr>
     <tr><td colspan="2"><input type="submit" value="Submit"></td></tr>
     </table>
+    <input type="hidden" name="login_token" value="">
 </form>
 {{ template "footer" }}
 {{ end }}

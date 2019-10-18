@@ -12,31 +12,35 @@ import (
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
-func getSearchSettings(r *http.Request) (*searchSettings, error) {
+func getSearchSettings(r *http.Request) (*searchSettings, *tinderAuth, error) {
 	err := r.ParseForm()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ctx := searchSettings{}
 
-	if len(r.Form["user"]) != 1 || len(r.Form["user"][0]) == 0 {
-		return nil, fmt.Errorf("Field 'user' must be not empty")
+	if len(r.Form["tel"]) != 1 || len(r.Form["tel"][0]) == 0 {
+		return nil, nil, fmt.Errorf("Field 'tel' must be not empty")
 	}
-	ctx.User = r.Form["user"][0]
+	ctx.Tel = r.Form["tel"][0]
 
-	if len(r.Form["password"]) != 1 || len(r.Form["password"][0]) == 0 {
-		return nil, fmt.Errorf("Field 'password' must be not empty")
-	}
-	ctx.Password = r.Form["password"][0]
+	auth := newTinderAuth(ctx.Tel)
 
-	if len(r.Form["token"]) != 1 || len(r.Form["token"][0]) == 0 {
-		return nil, fmt.Errorf("Field 'token' must be not empty")
+	if len(r.Form["login_token"]) != 1 || len(r.Form["login_token"][0]) == 0 {
+		return nil, nil, fmt.Errorf("You must fill login code")
 	}
-	ctx.Token = r.Form["token"][0]
+
+	auth.LoginToken = r.Form["login_token"][0]
+
+	if len(r.Form["code"]) != 1 || len(r.Form["code"][0]) == 0 {
+		return nil, nil, fmt.Errorf("You must fill login code")
+	}
+
+	auth.LoginCode = r.Form["code"][0]
 
 	if len(r.Form["likes"]) != 1 || len(r.Form["likes"][0]) == 0 {
-		return nil, fmt.Errorf("Field 'likes' must be not empty")
+		return nil, nil, fmt.Errorf("Field 'likes' must be not empty")
 	}
 	ctx.Likes = strings.Split(r.Form["likes"][0], ",")
 	utils.TrimArray(ctx.Likes)
@@ -49,32 +53,32 @@ func getSearchSettings(r *http.Request) (*searchSettings, error) {
 	}
 
 	if len(r.Form["ageFrom"]) != 1 || len(r.Form["ageFrom"][0]) == 0 {
-		return nil, fmt.Errorf("Field 'ageFrom' must be not empty")
+		return nil, nil, fmt.Errorf("Field 'ageFrom' must be not empty")
 	}
 
 	if len(r.Form["ageTo"]) != 1 || len(r.Form["ageTo"][0]) == 0 {
-		return nil, fmt.Errorf("Field 'ageTo' must be not empty")
+		return nil, nil, fmt.Errorf("Field 'ageTo' must be not empty")
 	}
 
 	u, err := strconv.ParseUint(r.Form["ageFrom"][0], 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("Field 'ageFrom' must be integer")
+		return nil, nil, fmt.Errorf("Field 'ageFrom' must be integer")
 	}
 
 	ctx.AgeFrom = uint(u)
 
 	u, err = strconv.ParseUint(r.Form["ageTo"][0], 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("Field 'ageTo' must be integer")
+		return nil, nil, fmt.Errorf("Field 'ageTo' must be integer")
 	}
 
 	ctx.AgeTo = uint(u)
 
-	return &ctx, nil
+	return &ctx, auth, nil
 }
 
 func (ctx *TinderProvider) GetSearchSession(log *logging.Logger, r *http.Request) (types.SearchSession, error) {
-	settings, err := getSearchSettings(r)
+	settings, auth, err := getSearchSettings(r)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +86,12 @@ func (ctx *TinderProvider) GetSearchSession(log *logging.Logger, r *http.Request
 	if err := settings.SearchSettings.Validate(); err != nil {
 		return nil, err
 	}
+
+	if err := auth.RequestToken(); err != nil {
+		return nil, fmt.Errorf("Tinder auth failed: %+v", err)
+	}
+
+	settings.APIToken = auth.APIToken
 
 	return NewSession(settings, log), nil
 }

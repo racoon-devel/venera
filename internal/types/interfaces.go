@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/ccding/go-logging/logging"
 )
 
@@ -34,6 +36,7 @@ type Provider interface {
 	GetSearchSession(log *logging.Logger, r *http.Request) (SearchSession, error)
 	RestoreSearchSession(log *logging.Logger, state string) SearchSession
 	GetResultActions(result *PersonRecord) []Action
+	SetupRouter(router *mux.Router)
 }
 
 type Rater interface {
