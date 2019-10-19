@@ -2,6 +2,7 @@ package dispatcher
 
 import (
 	"context"
+	"net/http"
 	"sync"
 	"time"
 
@@ -122,8 +123,26 @@ func (task *Task) poll() {
 	dispatcher.db.UpdateTask(&task.TaskRecord)
 	matches := task.session.Results()
 	for _, match := range matches {
-		dispatcher.db.AppendPerson(match, task.ID)
+		dispatcher.db.AppendPerson(match, task.ID, task.Provider)
 	}
 
 	dispatcher.log.Infof("polling: task %s:#%d got %d results", task.Provider, task.ID, len(matches))
+}
+
+func (task *Task) WebUpdate(w http.ResponseWriter, r *http.Request) (bool, error) {
+	log.Debugf("Editing task #%d", task.ID)
+	updated, err := task.session.Update(w, r)
+	if updated {
+		task.CurrentState = task.session.SaveState()
+		dispatcher.db.UpdateTask(&task.TaskRecord)
+
+		if task.Mode == ModeActive {
+			task.Suspend()
+			task.Run()
+		}
+
+		return true, nil
+	}
+
+	return false, err
 }

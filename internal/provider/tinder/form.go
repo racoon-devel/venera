@@ -12,32 +12,36 @@ import (
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
-func getSearchSettings(r *http.Request) (*searchSettings, *tinderAuth, error) {
+func parseForm(r *http.Request, editMode bool) (*searchSettings, *tinderAuth, error) {
 	err := r.ParseForm()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	ctx := searchSettings{}
+	var auth *tinderAuth
 
-	if len(r.Form["tel"]) != 1 || len(r.Form["tel"][0]) == 0 {
-		return nil, nil, fmt.Errorf("Field 'tel' must be not empty")
+	if !editMode {
+
+		if len(r.Form["tel"]) != 1 || len(r.Form["tel"][0]) == 0 {
+			return nil, nil, fmt.Errorf("Field 'tel' must be not empty")
+		}
+		ctx.Tel = r.Form["tel"][0]
+
+		auth = newTinderAuth(ctx.Tel)
+
+		if len(r.Form["login_token"]) != 1 || len(r.Form["login_token"][0]) == 0 {
+			return nil, nil, fmt.Errorf("You must fill login code")
+		}
+
+		auth.LoginToken = r.Form["login_token"][0]
+
+		if len(r.Form["code"]) != 1 || len(r.Form["code"][0]) == 0 {
+			return nil, nil, fmt.Errorf("You must fill login code")
+		}
+
+		auth.LoginCode = r.Form["code"][0]
 	}
-	ctx.Tel = r.Form["tel"][0]
-
-	auth := newTinderAuth(ctx.Tel)
-
-	if len(r.Form["login_token"]) != 1 || len(r.Form["login_token"][0]) == 0 {
-		return nil, nil, fmt.Errorf("You must fill login code")
-	}
-
-	auth.LoginToken = r.Form["login_token"][0]
-
-	if len(r.Form["code"]) != 1 || len(r.Form["code"][0]) == 0 {
-		return nil, nil, fmt.Errorf("You must fill login code")
-	}
-
-	auth.LoginCode = r.Form["code"][0]
 
 	if len(r.Form["likes"]) != 1 || len(r.Form["likes"][0]) == 0 {
 		return nil, nil, fmt.Errorf("Field 'likes' must be not empty")
@@ -78,7 +82,7 @@ func getSearchSettings(r *http.Request) (*searchSettings, *tinderAuth, error) {
 }
 
 func (ctx *TinderProvider) GetSearchSession(log *logging.Logger, r *http.Request) (types.SearchSession, error) {
-	settings, auth, err := getSearchSettings(r)
+	settings, auth, err := parseForm(r, false)
 	if err != nil {
 		return nil, err
 	}

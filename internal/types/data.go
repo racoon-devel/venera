@@ -44,7 +44,8 @@ type Action struct {
 type PersonRecord struct {
 	gorm.Model
 	TaskID      uint
-	Rating      int `sql:"index"`
+	PersonID    string `gorm:"unique;not null"`
+	Rating      int    `sql:"index"`
 	Description string
 	Person      Person `gorm:"-"`
 }

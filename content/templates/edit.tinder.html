@@ -1,0 +1,12 @@
+{{ define "edit.tinder" }}
+{{ template "header" 2 }}
+<form action="{{$.URL}}" method="POST" id="task-form">
+    <table>
+    <tr><td>Age</td><td><input type="text" name="ageFrom" value="{{$.AgeFrom}}"> - <input type="text" name="ageTo" value="{{$.AgeTo}}"></td></tr>
+    <tr><td colspan="2"> Likes<textarea name="likes" rows="5" cols="100">{{$.Likes}}</textarea></td></tr>
+    <tr><td colspan="2"> Dislikes<textarea name="dislikes" rows="5" cols="100">{{$.Dislikes}}</textarea></td></tr>
+    <tr><td colspan="2"><input type="submit" value="Submit"></td></tr>
+    </table>
+</form>
+{{ template "footer" }}
+{{ end }}

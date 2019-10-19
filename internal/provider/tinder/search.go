@@ -2,9 +2,7 @@ package tinder
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
-	"time"
 
 	"racoondev.tk/gitea/racoon/tindergo"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
@@ -97,7 +95,7 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 
 	for _, record := range persons {
 		session.log.Debugf("Rate person '%s'...", record.Name)
-		person := convert(&record)
+		person := convertPersonRecord(&record)
 		rating := session.rater.Rate(&person)
 
 		if person.Bio != "" {
@@ -126,21 +124,6 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 			})
 		}
 	}
-}
-
-func convert(record *tindergo.RecsCoreUser) types.Person {
-	person := types.Person{UserID: record.ID, Name: record.Name, Bio: record.Bio}
-	diff := time.Now().Sub(record.BirthDate)
-	person.Age = uint(diff.Seconds() / 31207680)
-	person.Job = fmt.Sprint(record.Jobs)
-	person.School = fmt.Sprint(record.Schools)
-
-	person.Photo = make([]string, 0)
-	for _, photo := range record.Photos {
-		person.Photo = append(person.Photo, photo.URL)
-	}
-
-	return person
 }
 
 func (session *tinderSearchSession) appendResult(person *types.Person) {

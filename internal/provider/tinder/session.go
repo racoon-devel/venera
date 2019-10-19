@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/ccding/go-logging/logging"
 
 	"racoondev.tk/gitea/racoon/tindergo"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"racoondev.tk/gitea/racoon/venera/internal/webui"
 )
 
 type tinderSessionState struct {
@@ -93,4 +96,58 @@ func (session *tinderSearchSession) Results() []*types.Person {
 	result := session.results
 	session.results = make([]*types.Person, 0)
 	return result
+}
+
+func listToString(list []string) string {
+	var result string
+	for _, item := range list {
+		result += item + ","
+	}
+
+	if len(result) != 0 {
+		result = strings.TrimSuffix(result, result[len(result)-1:])
+	}
+
+	return result
+}
+
+func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Request) (bool, error) {
+	if r.Method == "POST" {
+
+		search, _, err := parseForm(r, true)
+		if err != nil {
+			return false, err
+		}
+
+		session.mutex.Lock()
+		defer session.mutex.Unlock()
+
+		session.state.Search.AgeFrom = search.AgeFrom
+		session.state.Search.AgeTo = search.AgeTo
+		session.state.Search.Likes = search.Likes
+		session.state.Search.Dislikes = search.Dislikes
+
+		return true, nil
+	}
+
+	type editContext struct {
+		URL      string
+		Likes    string
+		Dislikes string
+		AgeFrom  uint
+		AgeTo    uint
+	}
+
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	ctx := editContext{URL: r.URL.String(), AgeFrom: session.state.Search.AgeFrom, AgeTo: session.state.Search.AgeTo}
+	ctx.Likes = listToString(session.state.Search.Likes)
+	ctx.Dislikes = listToString(session.state.Search.Dislikes)
+
+	session.log.Debugf("Display edit page")
+
+	webui.DisplayEditTask(w, "tinder", &ctx)
+
+	return false, nil
 }

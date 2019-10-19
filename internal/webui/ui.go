@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -68,6 +69,11 @@ func DisplayError(w http.ResponseWriter, err error) {
 
 func DisplayNewTask(w http.ResponseWriter, provider string) {
 	templates.ExecuteTemplate(w, "new."+provider, nil)
+}
+
+func DisplayEditTask(w http.ResponseWriter, provider string, context interface{}) {
+	fmt.Println(templates.DefinedTemplates())
+	templates.ExecuteTemplate(w, "edit."+provider, context)
 }
 
 func DisplayResults(w http.ResponseWriter, results *ResultContext) {

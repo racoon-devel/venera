@@ -44,13 +44,13 @@ func (self *Storage) DeleteTask(task *types.TaskRecord) {
 	self.db.Delete(task)
 }
 
-func (self *Storage) AppendPerson(person *types.Person, taskID uint) {
+func (self *Storage) AppendPerson(person *types.Person, taskID uint, provider string) {
 	data, err := json.Marshal(person)
 	if err != nil {
 		panic(err)
 	}
 
-	record := types.PersonRecord{TaskID: taskID, Description: string(data), Rating: person.Rating}
+	record := types.PersonRecord{TaskID: taskID, Description: string(data), Rating: person.Rating, PersonID: provider + "." + person.UserID}
 	self.db.Create(&record)
 }
 
@@ -59,9 +59,9 @@ func (self *Storage) LoadPersons(taskID uint, ascending bool, limit uint, offset
 	ctx := self.db
 
 	if ascending {
-		ctx = ctx.Order("rating asc")
+		ctx = ctx.Order("rating asc, created_at")
 	} else {
-		ctx = ctx.Order("rating desc")
+		ctx = ctx.Order("rating desc, created_at")
 	}
 
 	if taskID != 0 {

@@ -76,6 +76,32 @@ func newTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func editTaskHandler(w http.ResponseWriter, r *http.Request) {
+	log.Debugf("Edit task")
+	vars := mux.Vars(r)
+	id, err := strconv.ParseUint(vars["task"], 10, 32)
+	if err != nil {
+		webui.DisplayError(w, err)
+		return
+
+	}
+	err = taskAction(uint(id), func(task *Task) {
+		updated, err := task.WebUpdate(w, r)
+		if err != nil {
+			webui.DisplayError(w, err)
+			return
+		}
+		if updated {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+		}
+	})
+
+	if err != nil {
+		webui.DisplayError(w, err)
+		return
+	}
+}
+
 func controlTaskHandler(w http.ResponseWriter, r *http.Request, handler taskItemHandler) {
 	vars := mux.Vars(r)
 	id, err := strconv.ParseUint(vars["task"], 10, 32)
@@ -141,6 +167,7 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/", mainHandler).Methods("GET")
+
 	router.HandleFunc("/results", resultsHandler).Methods("GET")
 	router.HandleFunc("/result/{result}", resultHandler).Methods("GET")
 	router.HandleFunc("/result/{result}/delete", deleteHandler).Methods("GET")
@@ -151,6 +178,7 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 		router.HandleFunc("/task/new/"+id, newTaskHandler).Methods("GET", "POST")
 	}
 
+	router.HandleFunc("/task/{task}", editTaskHandler).Methods("GET", "POST")
 	router.HandleFunc("/task/stop/{task}", stopTaskHandler).Methods("GET")
 	router.HandleFunc("/task/delete/{task}", deleteTaskHandler).Methods("GET")
 	router.HandleFunc("/task/pause/{task}", suspendTaskHandler).Methods("GET")

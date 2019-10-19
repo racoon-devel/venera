@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-
 	"github.com/ccding/go-logging/logging"
 )
 
@@ -29,6 +28,8 @@ type SearchSession interface {
 	LoadState(string) error
 
 	Results() []*Person
+
+	Update(w http.ResponseWriter, r *http.Request) (bool, error)
 }
 
 // Provider - object for searching people in some social network
