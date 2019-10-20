@@ -26,10 +26,24 @@ type otherEntry struct {
 	Content string
 }
 
+type telegramEntry struct {
+	Token string
+}
+
+type proxyEntry struct {
+	Enabled  bool
+	IP       string
+	Port     int
+	User     string
+	Password string
+}
+
 type Config struct {
 	Http     httpEntry
 	Database dbEntry
 	Other    otherEntry
+	Telegram telegramEntry
+	Proxy    proxyEntry
 }
 
 var Configuration Config

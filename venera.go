@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sync"
 
 	"github.com/ccding/go-logging/logging"
 
+	"racoondev.tk/gitea/racoon/venera/internal/bot"
 	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
@@ -43,6 +45,13 @@ func main() {
 	}
 
 	logger.Debug(utils.Configuration)
+
+	wg := sync.WaitGroup{}
+
+	if err := bot.Init(logger, utils.Configuration.Telegram.Token, &wg); err != nil {
+		logger.Critical(err)
+		os.Exit(1)
+	}
 
 	if err := dispatcher.Init(logger); err != nil {
 		logger.Critical(err)
