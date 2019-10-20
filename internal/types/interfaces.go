@@ -3,9 +3,10 @@ package types
 import (
 	"context"
 	"net/http"
+	"net/url"
 
-	"github.com/gorilla/mux"
 	"github.com/ccding/go-logging/logging"
+	"github.com/gorilla/mux"
 )
 
 type SessionStatus int
@@ -28,6 +29,7 @@ type SearchSession interface {
 	LoadState(string) error
 
 	Results() []*Person
+	Action(action string, params url.Values) error
 
 	Update(w http.ResponseWriter, r *http.Request) (bool, error)
 }

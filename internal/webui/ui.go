@@ -27,6 +27,8 @@ type ResultContext struct {
 	TaskFilter uint
 	Ascending  bool
 	ViewMode   uint
+	Favourite  bool
+	Rating     uint
 }
 
 func LoadTemplates() error {

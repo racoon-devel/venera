@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 
@@ -150,4 +151,39 @@ func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Reques
 	webui.DisplayEditTask(w, "tinder", &ctx)
 
 	return false, nil
+}
+
+func (session *tinderSearchSession) Action(action string, params url.Values) error {
+	if action != "superlike" {
+		return fmt.Errorf("tinder: undefined action: '%s'", action)
+	}
+
+	IDs, ok := params["id"]
+	if !ok || len(IDs) == 0 {
+		return fmt.Errorf("user ID missed")
+	}
+
+	ID := IDs[0]
+
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	api := tindergo.New()
+	api.SetAPIToken(session.state.Search.APIToken)
+
+	resp, err := api.SuperLike(ID, "")
+	if err != nil {
+		return err
+	}
+
+	if resp.LimitExceeded {
+		return fmt.Errorf("Superlike limit exceeded")
+	}
+
+	if resp.Status != 200 {
+		return fmt.Errorf("Superlike failed: %d", resp.Status)
+	}
+
+	return nil
+
 }

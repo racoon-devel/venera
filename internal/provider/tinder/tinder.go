@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"html/template"
 
-	"github.com/gorilla/mux"
-
 	"github.com/ccding/go-logging/logging"
+	"github.com/gorilla/mux"
 
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
@@ -35,7 +34,7 @@ func (ctx TinderProvider) GetResultActions(result *types.PersonRecord) []types.A
 	return []types.Action{
 		{
 			Title: "Superlike",
-			Link: template.URL(fmt.Sprintf("/task/%d/superlike?id=%d", result.TaskID,
+			Link: template.URL(fmt.Sprintf("/task/%d/superlike?id=%s", result.TaskID,
 				result.Person.UserID)),
 		},
 	}

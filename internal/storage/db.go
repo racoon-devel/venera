@@ -54,7 +54,7 @@ func (self *Storage) AppendPerson(person *types.Person, taskID uint, provider st
 	self.db.Create(&record)
 }
 
-func (self *Storage) LoadPersons(taskID uint, ascending bool, limit uint, offset uint) ([]types.PersonRecord, uint, error) {
+func (self *Storage) LoadPersons(taskID uint, ascending bool, limit uint, offset uint, favourite bool, rating uint) ([]types.PersonRecord, uint, error) {
 	persons := make([]types.PersonRecord, 0)
 	ctx := self.db
 
@@ -62,6 +62,14 @@ func (self *Storage) LoadPersons(taskID uint, ascending bool, limit uint, offset
 		ctx = ctx.Order("rating asc, created_at")
 	} else {
 		ctx = ctx.Order("rating desc, created_at")
+	}
+
+	if favourite {
+		ctx = ctx.Where("favourite = ?", favourite)
+	}
+
+	if rating > 0 {
+		ctx = ctx.Where("rating = ?", rating)
 	}
 
 	if taskID != 0 {
@@ -104,4 +112,10 @@ func (self *Storage) DeletePerson(personID uint) {
 	record := types.PersonRecord{}
 	record.ID = personID
 	self.db.Delete(&record)
+}
+
+func (self *Storage) Favourite(personID uint) {
+	record := types.PersonRecord{}
+	record.ID = personID
+	self.db.Model(&record).Update("favourite", true)
 }

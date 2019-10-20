@@ -47,6 +47,7 @@ type PersonRecord struct {
 	PersonID    string `gorm:"unique;not null"`
 	Rating      int    `sql:"index"`
 	Description string
+	Favourite   bool
 	Person      Person `gorm:"-"`
 }
 

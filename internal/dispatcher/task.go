@@ -3,6 +3,7 @@ package dispatcher
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -145,4 +146,8 @@ func (task *Task) WebUpdate(w http.ResponseWriter, r *http.Request) (bool, error
 	}
 
 	return false, err
+}
+
+func (task *Task) Action(action string, params url.Values) error {
+	return task.session.Action(action, params)
 }

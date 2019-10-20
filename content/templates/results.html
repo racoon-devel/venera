@@ -30,6 +30,14 @@
                     {{- end}}
             </select>
         </td>
+        <td>
+            Favourite:
+            <input type="checkbox" name="favourite" {{ if eq $.Favourite true }} checked {{ end }}>
+        </td>
+        <td>
+            Rating:
+            <input type="text" name="rating" value="{{ $.Rating }}" size="2">
+        </td>
         <td valign="bottom">
             <button type="submit">Filter</button>
         </td>

@@ -6,11 +6,12 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/webui"
 )
 
-const resultsPerPage uint = 5
+const resultsPerPage uint = 30
 
 func getField(query url.Values, name string) uint {
 	param, ok := query[name]
@@ -30,6 +31,7 @@ func resultsHandler(w http.ResponseWriter, r *http.Request) {
 	res.TaskFilter = getField(r.URL.Query(), "task")
 	res.Page = getField(r.URL.Query(), "page")
 	res.ViewMode = getField(r.URL.Query(), "mode")
+	res.Rating = getField(r.URL.Query(), "rating")
 
 	orderParam, ok := r.URL.Query()["order"]
 	if ok && len(orderParam) != 0 {
@@ -38,11 +40,18 @@ func resultsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	favourParam, ok := r.URL.Query()["favourite"]
+	if ok && len(favourParam) != 0 {
+		if favourParam[0] == "on" {
+			res.Favourite = true
+		}
+	}
+
 	res.Tasks = dispatcher.db.LoadTasks()
 
 	var err error
 	var persons []types.PersonRecord
-	persons, res.Total, err = dispatcher.db.LoadPersons(res.TaskFilter, res.Ascending, resultsPerPage, res.Page*resultsPerPage)
+	persons, res.Total, err = dispatcher.db.LoadPersons(res.TaskFilter, res.Ascending, resultsPerPage, res.Page*resultsPerPage, res.Favourite, res.Rating)
 	if err != nil {
 		webui.DisplayError(w, err)
 		return
@@ -108,5 +117,16 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dispatcher.db.DeletePerson(uint(id))
+	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+}
+func favourHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseUint(vars["result"], 10, 32)
+	if err != nil {
+		webui.DisplayError(w, err)
+		return
+	}
+
+	dispatcher.db.Favourite(uint(id))
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 }

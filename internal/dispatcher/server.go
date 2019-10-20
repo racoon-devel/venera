@@ -1,6 +1,7 @@
 package dispatcher
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -102,6 +103,27 @@ func editTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func actionTaskHandler(w http.ResponseWriter, r *http.Request) {
+	controlTaskHandler(w, r, func(taskId uint) error {
+		vars := mux.Vars(r)
+		action, ok := vars["action"]
+		if !ok {
+			return fmt.Errorf("Action not defined")
+		}
+
+		var nestedError error
+		err := taskAction(taskId, func(task *Task) {
+			nestedError = task.Action(action, r.URL.Query())
+		})
+
+		if nestedError != nil {
+			err = nestedError
+		}
+
+		return err
+	})
+}
+
 func controlTaskHandler(w http.ResponseWriter, r *http.Request, handler taskItemHandler) {
 	vars := mux.Vars(r)
 	id, err := strconv.ParseUint(vars["task"], 10, 32)
@@ -113,6 +135,7 @@ func controlTaskHandler(w http.ResponseWriter, r *http.Request, handler taskItem
 
 	err = handler(uint(id))
 	if err != nil {
+		log.Errorf("Task #%d control error: %+v", id, err)
 		webui.DisplayError(w, err)
 		return
 	}
@@ -171,6 +194,7 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	router.HandleFunc("/results", resultsHandler).Methods("GET")
 	router.HandleFunc("/result/{result}", resultHandler).Methods("GET")
 	router.HandleFunc("/result/{result}/delete", deleteHandler).Methods("GET")
+	router.HandleFunc("/result/{result}/favour", favourHandler).Methods("GET")
 
 	providers := provider.All()
 	for id, prov := range providers {
@@ -179,6 +203,7 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	}
 
 	router.HandleFunc("/task/{task}", editTaskHandler).Methods("GET", "POST")
+	router.HandleFunc("/task/{task}/{action}", actionTaskHandler).Methods("GET")
 	router.HandleFunc("/task/stop/{task}", stopTaskHandler).Methods("GET")
 	router.HandleFunc("/task/delete/{task}", deleteTaskHandler).Methods("GET")
 	router.HandleFunc("/task/pause/{task}", suspendTaskHandler).Methods("GET")

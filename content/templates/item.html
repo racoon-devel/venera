@@ -22,6 +22,9 @@
         <table>
                 <tr>
                     <td><a class="button button-small" href="/result/{{$.ID}}/delete">DELETE</a></td>
+                    {{ if eq $.Favourite false }}
+                    <td><a class="button button-small" href="/result/{{$.ID}}/favour">FAVOUR</a></td>
+                    {{ end }}
                     {{ range $i, $a := $.Actions }}
                     <td><a class="button button-small" href="{{ $a.Link }}">{{ $a.Title }}</a></td>
                     {{ end }}
