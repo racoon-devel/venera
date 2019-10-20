@@ -12,8 +12,9 @@ import (
 
 var log *logging.Logger
 var done chan bool
+var trustedChat *chat
 
-func Init(logger *logging.Logger, APIToken string, waitGroup *sync.WaitGroup) error {
+func Init(logger *logging.Logger, APIToken string, trustedUser string, waitGroup *sync.WaitGroup) error {
 	log = logger
 
 	log.Infof("Start Telegram Bot { token = '%s' }", APIToken)
@@ -29,14 +30,14 @@ func Init(logger *logging.Logger, APIToken string, waitGroup *sync.WaitGroup) er
 	waitGroup.Add(1)
 	go func() {
 		defer waitGroup.Done()
-		loop(bot)
+		loop(bot, trustedUser)
 	}()
 
 	return nil
 
 }
 
-func loop(bot *tgbotapi.BotAPI) {
+func loop(bot *tgbotapi.BotAPI, trustedUser string) {
 
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 0
@@ -56,9 +57,11 @@ func loop(bot *tgbotapi.BotAPI) {
 			var userID int
 			var userName string
 			var userMessage string
+			var telegramChat *tgbotapi.Chat
 
 			if update.Message != nil {
 				chatID = update.Message.Chat.ID
+				telegramChat = update.Message.Chat
 				userID = update.Message.From.ID
 				userName = update.Message.From.UserName
 				userMessage = update.Message.Text
@@ -67,15 +70,27 @@ func loop(bot *tgbotapi.BotAPI) {
 				userID = update.CallbackQuery.From.ID
 				userName = update.CallbackQuery.From.UserName
 				userMessage = update.CallbackQuery.Data
+				telegramChat = update.CallbackQuery.Message.Chat
 
-				//bot.bot.AnswerCallbackQuery(tgbotapi.CallbackConfig{CallbackQueryID: update.CallbackQuery.ID})
+				bot.AnswerCallbackQuery(tgbotapi.CallbackConfig{CallbackQueryID: update.CallbackQuery.ID})
 			} else {
+				continue
+			}
+
+			if userName != trustedUser {
+				msg := tgbotapi.NewMessage(chatID, "You are not trusted user")
+				bot.Send(msg)
 				continue
 			}
 
 			log.Debugf("[Message] %s: \"%s\" [%d, %d]", userName, userMessage, chatID, userID)
 
-			//response := bot.handleCommand(userID, userName, userMessage)
+			if trustedChat == nil {
+				trustedChat = newChat(telegramChat)
+			}
+
+			resp := trustedChat.IncomingMessage(userMessage)
+			bot.Send(resp)
 
 		case <-done:
 			return

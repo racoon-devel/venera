@@ -27,7 +27,8 @@ type otherEntry struct {
 }
 
 type telegramEntry struct {
-	Token string
+	Token       string
+	TrustedUser string
 }
 
 type proxyEntry struct {

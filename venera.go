@@ -48,7 +48,7 @@ func main() {
 
 	wg := sync.WaitGroup{}
 
-	if err := bot.Init(logger, utils.Configuration.Telegram.Token, &wg); err != nil {
+	if err := bot.Init(logger, utils.Configuration.Telegram.Token, utils.Configuration.Telegram.TrustedUser, &wg); err != nil {
 		logger.Critical(err)
 		os.Exit(1)
 	}

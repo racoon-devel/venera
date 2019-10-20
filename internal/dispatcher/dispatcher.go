@@ -101,6 +101,18 @@ func Describe() []TaskInfo {
 	return tasks
 }
 
+func GetTaskInfo(taskID uint) (TaskInfo, error) {
+	dispatcher.mutex.Lock()
+	defer dispatcher.mutex.Unlock()
+
+	task, ok := dispatcher.tasks[taskID]
+	if !ok {
+		return TaskInfo{}, fmt.Errorf("Task not found: %d", taskID)
+	}
+
+	return task.GetInfo(), nil
+}
+
 func taskAction(taskID uint, handler func(task *Task)) error {
 	dispatcher.mutex.Lock()
 	defer dispatcher.mutex.Unlock()
