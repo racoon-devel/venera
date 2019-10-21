@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/ccding/go-logging/logging"
 
@@ -16,9 +17,19 @@ import (
 	"racoondev.tk/gitea/racoon/venera/internal/webui"
 )
 
+type tinderStat struct {
+	Retrieved  uint32
+	Liked      uint32
+	Superliked uint32
+	Passed     uint32
+	Errors     uint32
+	Matches    uint32
+}
+
 type tinderSessionState struct {
 	Search searchSettings
 	Top    []types.Person
+	Stat   tinderStat
 }
 
 type tinderSearchSession struct {
@@ -184,6 +195,19 @@ func (session *tinderSearchSession) Action(action string, params url.Values) err
 		return fmt.Errorf("Superlike failed: %d", resp.Status)
 	}
 
-	return nil
+	atomic.AddUint32(&session.state.Stat.Superliked, 1)
 
+	return nil
+}
+
+func (session *tinderSearchSession) GetStat() map[string]uint32 {
+	stat := make(map[string]uint32)
+	stat["Retrieved"] = atomic.SwapUint32(&session.state.Stat.Retrieved, 0)
+	stat["Liked"] = atomic.SwapUint32(&session.state.Stat.Liked, 0)
+	stat["Passed"] = atomic.SwapUint32(&session.state.Stat.Passed, 0)
+	stat["Superliked"] = atomic.SwapUint32(&session.state.Stat.Superliked, 0)
+	stat["Matches"] = atomic.SwapUint32(&session.state.Stat.Matches, 0)
+	stat["Errors"] = atomic.SwapUint32(&session.state.Stat.Errors, 0)
+
+	return stat
 }

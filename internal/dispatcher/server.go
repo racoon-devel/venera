@@ -1,10 +1,12 @@
 package dispatcher
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ccding/go-logging/logging"
@@ -218,7 +220,7 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 }
 
 // Run start HTTP server
-func RunServer(logger *logging.Logger) {
+func RunServer(logger *logging.Logger, wg *sync.WaitGroup) {
 
 	router := InstanceRouter(logger)
 
@@ -227,7 +229,24 @@ func RunServer(logger *logging.Logger) {
 
 	log.Infof("Start HTTP server { endpoint = %s:%d }", ip, port)
 
-	logger.Fatal(http.ListenAndServe(ip+":"+
-		strconv.Itoa(port), router))
+	dispatcher.httpServer = http.Server{Addr: ip + ":" + strconv.Itoa(port), Handler: router}
 
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		log.Fatal(dispatcher.httpServer.ListenAndServe())
+	}()
+}
+
+func Stop() {
+	dispatcher.log.Info("HTTP Server shutdowning...")
+	dispatcher.httpServer.Shutdown(context.Background())
+
+	dispatcher.mutex.Lock()
+	defer dispatcher.mutex.Unlock()
+
+	for _, task := range dispatcher.tasks {
+		task.Shutdown()
+	}
 }

@@ -3,6 +3,7 @@ package tinder
 import (
 	"context"
 	"math/rand"
+	"sync/atomic"
 
 	"racoondev.tk/gitea/racoon/tindergo"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
@@ -94,6 +95,7 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 	session.log.Debugf("tinder: got %d persons", len(persons))
 
 	for _, record := range persons {
+		atomic.AddUint32(&session.state.Stat.Retrieved, 1)
 		session.log.Debugf("Rate person '%s'...", record.Name)
 		person := convertPersonRecord(&record)
 		rating := session.rater.Rate(&person)
@@ -111,6 +113,7 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 				_, err := session.api.Like(record)
 				return err
 			})
+			atomic.AddUint32(&session.state.Stat.Liked, 1)
 
 			if rating > 0 {
 				session.appendResult(&person)
@@ -122,6 +125,7 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 				_, err := session.api.Pass(record)
 				return err
 			})
+			atomic.AddUint32(&session.state.Stat.Passed, 1)
 		}
 	}
 }

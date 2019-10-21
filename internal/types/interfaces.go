@@ -24,6 +24,7 @@ type SearchSession interface {
 	Reset()
 
 	Status() SessionStatus
+	GetStat() map[string]uint32
 
 	SaveState() string
 	LoadState(string) error

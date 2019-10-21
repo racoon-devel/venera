@@ -7,6 +7,10 @@ import (
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
+const (
+	minBioLength = 20
+)
+
 type tinderRater struct {
 	settings  *types.SearchSettings
 	processor *utils.TextProcessor
@@ -51,7 +55,7 @@ func (self *tinderRater) Rate(person *types.Person) int {
 		return -1
 	}
 
-	if person.Bio != "" {
+	if len(person.Bio) > minBioLength {
 		rating++
 
 		matches, dismatches := self.processor.Process(person.Bio)

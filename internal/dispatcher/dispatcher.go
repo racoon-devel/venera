@@ -2,6 +2,7 @@ package dispatcher
 
 import (
 	"fmt"
+	"net/http"
 	"sort"
 	"sync"
 
@@ -16,10 +17,11 @@ import (
 )
 
 var dispatcher struct {
-	log   *logging.Logger
-	db    *storage.Storage
-	tasks map[uint]*Task
-	mutex sync.Mutex
+	log        *logging.Logger
+	db         *storage.Storage
+	tasks      map[uint]*Task
+	mutex      sync.Mutex
+	httpServer http.Server
 }
 
 func Init(log *logging.Logger) error {
@@ -157,4 +159,19 @@ func RunTask(taskID uint) error {
 		dispatcher.db.UpdateTask(&task.TaskRecord)
 		dispatcher.log.Infof("Task #%d started", taskID)
 	})
+}
+
+func CollectStat() []string {
+	dispatcher.mutex.Lock()
+	defer dispatcher.mutex.Unlock()
+
+	var result = make([]string, 0)
+
+	for _, task := range dispatcher.tasks {
+		if task.Mode == ModeActive {
+			result = append(result, task.GetStat())
+		}
+	}
+
+	return result
 }

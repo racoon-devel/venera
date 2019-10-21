@@ -35,8 +35,12 @@ func (self *chat) IncomingMessage(message string) tgbotapi.Chattable {
 	return msg
 }
 
+func (self *chat) ChatID() int64 {
+	return self.chat.ID
+}
+
 func (self *chat) displayError(err error) *tgbotapi.MessageConfig {
 	msg := tgbotapi.NewMessage(self.chat.ID, err.Error())
-	log.Error(err)
+	bot.log.Error(err)
 	return &msg
 }

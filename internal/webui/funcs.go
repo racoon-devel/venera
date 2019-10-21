@@ -30,7 +30,7 @@ func tsToHumanReadable(ts time.Duration) string {
 		days, hours, mins, secs)
 }
 
-func statusToHumanReadable(status types.SessionStatus) string {
+func StatusToHumanReadable(status types.SessionStatus) string {
 	switch status {
 
 	case types.StatusIdle:

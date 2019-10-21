@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime"
 	"sync"
 
@@ -46,17 +48,31 @@ func main() {
 
 	logger.Debug(utils.Configuration)
 
-	wg := sync.WaitGroup{}
-
-	if err := bot.Init(logger, utils.Configuration.Telegram.Token, utils.Configuration.Telegram.TrustedUser, &wg); err != nil {
-		logger.Critical(err)
-		os.Exit(1)
-	}
+	wgBot := sync.WaitGroup{}
+	ctx, shutdownBot := context.WithCancel(context.Background())
+	signalChannel := make(chan os.Signal)
+	signal.Notify(signalChannel, os.Interrupt)
 
 	if err := dispatcher.Init(logger); err != nil {
 		logger.Critical(err)
 		os.Exit(1)
 	}
 
-	dispatcher.RunServer(logger)
+	if err := bot.Init(ctx, logger, &wgBot, utils.Configuration.Telegram.Token,
+		utils.Configuration.Telegram.TrustedUser); err != nil {
+		logger.Critical(err)
+		os.Exit(1)
+	}
+
+	wgDispatcher := sync.WaitGroup{}
+	dispatcher.RunServer(logger, &wgDispatcher)
+
+	<-signalChannel
+
+	shutdownBot()
+	wgBot.Wait()
+
+	dispatcher.Stop()
+	wgDispatcher.Wait()
+
 }

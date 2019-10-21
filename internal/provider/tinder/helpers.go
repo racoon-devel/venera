@@ -2,6 +2,7 @@ package tinder
 
 import (
 	"context"
+	"sync/atomic"
 
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
@@ -28,6 +29,8 @@ func (session *tinderSearchSession) repeat(ctx context.Context, handler func() e
 		if err == nil {
 			return
 		}
+
+		atomic.AddUint32(&session.state.Stat.Errors, 1)
 
 		session.raise(err)
 	}

@@ -2,6 +2,7 @@ package dispatcher
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	"github.com/ccding/go-logging/logging"
 
 	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"racoondev.tk/gitea/racoon/venera/internal/webui"
 )
 
 type TaskMode int
@@ -106,16 +108,19 @@ func (task *Task) Suspend() {
 	}
 }
 
-func (task *Task) Stop() {
-	task.log.Debugf("task.Mode: %+v", task.Mode)
-
+func (task *Task) Shutdown() {
 	if task.Mode != ModeIdle {
-		task.Mode = ModeIdle
-		task.log.Infof("Stopping task %s:#%d...", task.Provider, task.ID)
+		task.log.Infof("Shutdowning task %s:#%d...", task.Provider, task.ID)
 		task.cancel()
 		task.wg.Wait()
+		task.poll()
+	}
+}
+
+func (task *Task) Stop() {
+	if task.Mode != ModeIdle {
+		task.Suspend()
 		task.session.Reset()
-		task.log.Infof("Task %s:#%d stopped", task.Provider, task.ID)
 	}
 }
 
@@ -150,4 +155,15 @@ func (task *Task) WebUpdate(w http.ResponseWriter, r *http.Request) (bool, error
 
 func (task *Task) Action(action string, params url.Values) error {
 	return task.session.Action(action, params)
+}
+
+func (task *Task) GetStat() string {
+	result := fmt.Sprintf("<b>Task #%d [ %s ]</b>\n\n", task.ID, task.Provider)
+	result += fmt.Sprintf("<i>Status:</i> %s\n", webui.StatusToHumanReadable(task.session.Status()))
+	stat := task.session.GetStat()
+	for title, value := range stat {
+		result += fmt.Sprintf("<i>%s:</i> %d\n", title, value)
+	}
+
+	return result
 }

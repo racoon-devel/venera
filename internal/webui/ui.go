@@ -47,7 +47,7 @@ func LoadTemplates() error {
 
 	root := template.New("root").Funcs(template.FuncMap{
 		"ts":        tsToHumanReadable,
-		"status":    statusToHumanReadable,
+		"status":    StatusToHumanReadable,
 		"mod2":      mod2,
 		"inc":       inc,
 		"highlight": hightlight,
