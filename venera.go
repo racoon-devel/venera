@@ -51,7 +51,7 @@ func main() {
 	wgBot := sync.WaitGroup{}
 	ctx, shutdownBot := context.WithCancel(context.Background())
 	signalChannel := make(chan os.Signal)
-	signal.Notify(signalChannel, os.Interrupt)
+	signal.Notify(signalChannel, os.Interrupt, os.Kill)
 
 	if err := dispatcher.Init(logger); err != nil {
 		logger.Critical(err)
