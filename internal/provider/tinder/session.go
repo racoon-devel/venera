@@ -9,6 +9,9 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
+
+	"racoondev.tk/gitea/racoon/venera/internal/interactive"
 
 	"github.com/ccding/go-logging/logging"
 
@@ -23,13 +26,13 @@ type tinderStat struct {
 	Superliked uint32
 	Passed     uint32
 	Errors     uint32
-	Matches    uint32
 }
 
 type tinderSessionState struct {
-	Search searchSettings
-	Top    []types.Person
-	Stat   tinderStat
+	Search           searchSettings
+	Top              []types.Person
+	Stat             tinderStat
+	LastSuperlikeUpd time.Time
 }
 
 type tinderSearchSession struct {
@@ -107,6 +110,25 @@ func (session *tinderSearchSession) Results() []*types.Person {
 	defer session.mutex.Unlock()
 	result := session.results
 	session.results = make([]*types.Person, 0)
+
+	now := time.Now()
+	if now.Sub(session.state.LastSuperlikeUpd) >= superlikeRefreshPeriod {
+		session.state.LastSuperlikeUpd = now
+		go func() {
+			// очень некрасиво...
+			<-time.After(5 * time.Second)
+			session.mutex.Lock()
+			defer session.mutex.Unlock()
+
+			top := session.top.Get()
+			for _, person := range top {
+				interactive.PostResult(&TinderProvider{}, &person)
+			}
+
+			session.top.Clear()
+		}()
+	}
+
 	return result
 }
 
@@ -206,7 +228,6 @@ func (session *tinderSearchSession) GetStat() map[string]uint32 {
 	stat["Liked"] = atomic.SwapUint32(&session.state.Stat.Liked, 0)
 	stat["Passed"] = atomic.SwapUint32(&session.state.Stat.Passed, 0)
 	stat["Superliked"] = atomic.SwapUint32(&session.state.Stat.Superliked, 0)
-	stat["Matches"] = atomic.SwapUint32(&session.state.Stat.Matches, 0)
 	stat["Errors"] = atomic.SwapUint32(&session.state.Stat.Errors, 0)
 
 	return stat

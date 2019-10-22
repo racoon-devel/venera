@@ -9,10 +9,13 @@ import (
 	"runtime"
 	"sync"
 
+	"racoondev.tk/gitea/racoon/venera/internal/interactive"
+
 	"github.com/ccding/go-logging/logging"
 
 	"racoondev.tk/gitea/racoon/venera/internal/bot"
 	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
+	"racoondev.tk/gitea/racoon/venera/internal/storage"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
@@ -48,21 +51,30 @@ func main() {
 
 	logger.Debug(utils.Configuration)
 
+	database, err := storage.Connect(utils.Configuration.GetConnectionString())
+	if err != nil {
+		logger.Critical(err)
+		os.Exit(1)
+	}
+
 	wgBot := sync.WaitGroup{}
 	ctx, shutdownBot := context.WithCancel(context.Background())
 	signalChannel := make(chan os.Signal)
 	signal.Notify(signalChannel, os.Interrupt, os.Kill)
 
-	if err := dispatcher.Init(logger); err != nil {
+	if err := dispatcher.Initialize(logger, database); err != nil {
 		logger.Critical(err)
 		os.Exit(1)
 	}
 
-	if err := bot.Init(ctx, logger, &wgBot, utils.Configuration.Telegram.Token,
-		utils.Configuration.Telegram.TrustedUser); err != nil {
+	botChannel, err := bot.Initialize(ctx, logger, &wgBot, utils.Configuration.Telegram.Token,
+		utils.Configuration.Telegram.TrustedUser)
+	if err != nil {
 		logger.Critical(err)
 		os.Exit(1)
 	}
+
+	interactive.Initialize(logger, database, botChannel)
 
 	wgDispatcher := sync.WaitGroup{}
 	dispatcher.RunServer(logger, &wgDispatcher)

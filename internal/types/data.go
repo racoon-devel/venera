@@ -37,8 +37,9 @@ type Person struct {
 }
 
 type Action struct {
-	Link  template.URL
-	Title string
+	Link    template.URL
+	Command string
+	Title   string
 }
 
 type PersonRecord struct {

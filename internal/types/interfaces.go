@@ -37,6 +37,7 @@ type SearchSession interface {
 
 // Provider - object for searching people in some social network
 type Provider interface {
+	ID() string
 	GetSearchSession(log *logging.Logger, r *http.Request) (SearchSession, error)
 	RestoreSearchSession(log *logging.Logger, state string) SearchSession
 	GetResultActions(result *PersonRecord) []Action

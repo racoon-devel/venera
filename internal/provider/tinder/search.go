@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/rand"
 	"sync/atomic"
+	"time"
 
 	"racoondev.tk/gitea/racoon/tindergo"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
@@ -11,7 +12,8 @@ import (
 )
 
 const (
-	maxSuperLikes uint = 5
+	maxSuperLikes          uint = 5
+	superlikeRefreshPeriod      = 140 * time.Second
 	// TODO: в SearchSettings
 	locationLatitude   float32 = 55.741676
 	locationLongtitude float32 = 37.624928
@@ -28,6 +30,10 @@ func (session *tinderSearchSession) setup(ctx context.Context) {
 	session.log.Debugf("tinder: authentification...")
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
+
+	if session.state.LastSuperlikeUpd.IsZero() {
+		session.state.LastSuperlikeUpd = time.Now()
+	}
 
 	session.api.SetAPIToken(session.state.Search.APIToken)
 

@@ -10,6 +10,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
 	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
+	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
@@ -20,18 +21,15 @@ var bot struct {
 	api         *tgbotapi.BotAPI
 	timer       *time.Ticker
 	trustedChat *chat
-	messageChan chan *botMessage
+	messageChan types.BotChannel
 }
 
 const (
 	statInterval = time.Minute
 )
 
-type botMessage struct {
-	Content string
-}
-
-func Init(ctx context.Context, logger *logging.Logger, wg *sync.WaitGroup, APIToken string, trustedUser string) error {
+func Initialize(ctx context.Context, logger *logging.Logger, wg *sync.WaitGroup,
+	APIToken string, trustedUser string) (types.BotChannel, error) {
 	bot.log = logger
 	bot.ctx = ctx
 	bot.wg = wg
@@ -42,17 +40,17 @@ func Init(ctx context.Context, logger *logging.Logger, wg *sync.WaitGroup, APITo
 	bot.api, err = tgbotapi.NewBotAPIWithClient(APIToken, utils.GetHTTPClient())
 
 	if err != nil {
-		return fmt.Errorf("Create Telegram API instance failed: %+v", err)
+		return nil, fmt.Errorf("Create Telegram API instance failed: %+v", err)
 	}
 
-	bot.messageChan = make(chan *botMessage, 1000)
+	bot.messageChan = make(types.BotChannel, 1000)
 
 	bot.timer = time.NewTicker(statInterval)
 
 	wg.Add(1)
 	go loop(trustedUser)
 
-	return nil
+	return bot.messageChan, nil
 
 }
 
@@ -120,7 +118,7 @@ func loop(trustedUser string) {
 			return
 
 		case message := <-bot.messageChan:
-			sendTextMessage(message.Content)
+			sendMessage(message)
 
 		case <-bot.timer.C:
 			sendStat()
@@ -136,15 +134,39 @@ func sendTextMessage(text string) {
 	}
 }
 
+func sendMessage(message *types.Message) {
+	if bot.trustedChat != nil {
+		if message.Photo != "" {
+			photo := tgbotapi.PhotoConfig{}
+			photo.ChatID = bot.trustedChat.ChatID()
+			photo.FileID = message.Photo
+			photo.UseExisting = true
+			photo.Caption = message.PhotoCaption
+			bot.api.Send(photo)
+		}
+
+		msg := tgbotapi.NewMessage(bot.trustedChat.ChatID(), message.Content)
+		msg.ParseMode = "HTML"
+		if message.Actions != nil && len(message.Actions) > 0 {
+			buttons := make([]tgbotapi.InlineKeyboardButton, 0)
+			for _, action := range message.Actions {
+				row := tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(action.Title, action.Command),
+				)
+
+				buttons = append(buttons, row...)
+			}
+
+			msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons)
+		}
+		bot.api.Send(msg)
+	}
+}
+
 func sendStat() {
 	stat := dispatcher.CollectStat()
 	for _, text := range stat {
 		bot.log.Info(text)
 		sendTextMessage(text)
 	}
-}
-
-func Post(message string) {
-	msg := &botMessage{Content: message}
-	bot.messageChan <- msg
 }

@@ -69,3 +69,10 @@ func (self *topList) Get() []types.Person {
 	copy(result, self.items)
 	return result
 }
+
+func (self *topList) Clear() {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+
+	self.items = make([]types.Person, 0)
+}

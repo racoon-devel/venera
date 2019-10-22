@@ -3,6 +3,7 @@ package dispatcher
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"sync"
 
@@ -12,7 +13,6 @@ import (
 	"racoondev.tk/gitea/racoon/venera/internal/provider"
 	"racoondev.tk/gitea/racoon/venera/internal/storage"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"racoondev.tk/gitea/racoon/venera/internal/webui"
 )
 
@@ -24,17 +24,12 @@ var dispatcher struct {
 	httpServer http.Server
 }
 
-func Init(log *logging.Logger) error {
+func Initialize(log *logging.Logger, db *storage.Storage) error {
 	dispatcher.mutex.Lock()
 	defer dispatcher.mutex.Unlock()
 
 	dispatcher.log = log
-
-	var err error
-	dispatcher.db, err = storage.Connect(utils.Configuration.GetConnectionString())
-	if err != nil {
-		return err
-	}
+	dispatcher.db = db
 
 	if err := webui.LoadTemplates(); err != nil {
 		return err
@@ -174,4 +169,16 @@ func CollectStat() []string {
 	}
 
 	return result
+}
+
+func Action(taskID uint, action string, args url.Values) error {
+	dispatcher.mutex.Lock()
+	defer dispatcher.mutex.Unlock()
+
+	task, ok := dispatcher.tasks[taskID]
+	if !ok {
+		return fmt.Errorf("Task not found: %d", taskID)
+	}
+
+	return task.Action(action, args)
 }

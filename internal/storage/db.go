@@ -119,3 +119,18 @@ func (self *Storage) Favourite(personID uint) {
 	record.ID = personID
 	self.db.Model(&record).Update("favourite", true)
 }
+
+func (self *Storage) SearchPerson(userID string) *types.PersonRecord {
+	record := types.PersonRecord{}
+	self.db.Model(&record).Where("person_id = ?", userID).First(&record)
+	if record.PersonID != userID {
+		return nil
+	}
+
+	err := json.Unmarshal([]byte(record.Description), &record.Person)
+	if err != nil {
+		return nil
+	}
+
+	return &record
+}
