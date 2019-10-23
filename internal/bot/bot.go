@@ -4,13 +4,10 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/ccding/go-logging/logging"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
-	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
@@ -19,20 +16,24 @@ var bot struct {
 	log         *logging.Logger
 	wg          *sync.WaitGroup
 	api         *tgbotapi.BotAPI
-	timer       *time.Ticker
+	trustedUser string
 	trustedChat *chat
-	messageChan types.BotChannel
+	messageChan Channel
 }
 
-const (
-	statInterval = time.Minute
+var (
+	cmdMutex       sync.Mutex
+	commandSet     = make(map[string]botCommand, 0)
+	defaultCommand *botCommand
 )
 
 func Initialize(ctx context.Context, logger *logging.Logger, wg *sync.WaitGroup,
-	APIToken string, trustedUser string) (types.BotChannel, error) {
+	APIToken string, trustedUser string) error {
+
 	bot.log = logger
 	bot.ctx = ctx
 	bot.wg = wg
+	bot.trustedUser = trustedUser
 
 	bot.log.Infof("Start Telegram Bot { token = '%s' }", APIToken)
 
@@ -40,23 +41,23 @@ func Initialize(ctx context.Context, logger *logging.Logger, wg *sync.WaitGroup,
 	bot.api, err = tgbotapi.NewBotAPIWithClient(APIToken, utils.GetHTTPClient())
 
 	if err != nil {
-		return nil, fmt.Errorf("Create Telegram API instance failed: %+v", err)
+		return fmt.Errorf("Create Telegram API instance failed: %+v", err)
 	}
 
-	bot.messageChan = make(types.BotChannel, 1000)
-
-	bot.timer = time.NewTicker(statInterval)
+	bot.messageChan = make(Channel, 1000)
 
 	wg.Add(1)
-	go loop(trustedUser)
+	go func() {
+		defer bot.wg.Done()
 
-	return bot.messageChan, nil
+		botLoop()
+	}()
+
+	return nil
 
 }
 
-func loop(trustedUser string) {
-	defer bot.wg.Done()
-	defer bot.timer.Stop()
+func botLoop() {
 
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 0
@@ -72,58 +73,63 @@ func loop(trustedUser string) {
 		select {
 
 		case update := <-updates:
-			var chatID int64
-			var userID int
-			var userName string
-			var userMessage string
-			var telegramChat *tgbotapi.Chat
-
-			if update.Message != nil {
-				chatID = update.Message.Chat.ID
-				telegramChat = update.Message.Chat
-				userID = update.Message.From.ID
-				userName = update.Message.From.UserName
-				userMessage = update.Message.Text
-			} else if update.CallbackQuery != nil {
-				chatID = update.CallbackQuery.Message.Chat.ID
-				userID = update.CallbackQuery.From.ID
-				userName = update.CallbackQuery.From.UserName
-				userMessage = update.CallbackQuery.Data
-				telegramChat = update.CallbackQuery.Message.Chat
-
-				bot.api.AnswerCallbackQuery(tgbotapi.CallbackConfig{CallbackQueryID: update.CallbackQuery.ID})
-			} else {
-				continue
-			}
-
-			if userName != trustedUser {
-				msg := tgbotapi.NewMessage(chatID, "You are not trusted user")
-				bot.api.Send(msg)
-				continue
-			}
-
-			bot.log.Debugf("[Message] %s: \"%s\" [%d, %d]", userName, userMessage, chatID, userID)
-
-			if bot.trustedChat == nil {
-				bot.trustedChat = newChat(telegramChat)
-			}
-
-			resp := bot.trustedChat.IncomingMessage(userMessage)
-			bot.api.Send(resp)
+			handleUpdates(&update)
 
 		case <-bot.ctx.Done():
-			sendStat()
-			sendTextMessage("Shutdowning...")
-			close(bot.messageChan)
+			shutdown()
 			return
 
 		case message := <-bot.messageChan:
 			sendMessage(message)
-
-		case <-bot.timer.C:
-			sendStat()
 		}
 	}
+}
+
+func handleUpdates(update *tgbotapi.Update) {
+	var chatID int64
+	var userID int
+	var userName string
+	var userMessage string
+	var telegramChat *tgbotapi.Chat
+
+	if update.Message != nil {
+		chatID = update.Message.Chat.ID
+		telegramChat = update.Message.Chat
+		userID = update.Message.From.ID
+		userName = update.Message.From.UserName
+		userMessage = update.Message.Text
+	} else if update.CallbackQuery != nil {
+		chatID = update.CallbackQuery.Message.Chat.ID
+		userID = update.CallbackQuery.From.ID
+		userName = update.CallbackQuery.From.UserName
+		userMessage = update.CallbackQuery.Data
+		telegramChat = update.CallbackQuery.Message.Chat
+
+		bot.api.AnswerCallbackQuery(tgbotapi.CallbackConfig{CallbackQueryID: update.CallbackQuery.ID})
+	} else {
+		return
+	}
+
+	if userName != bot.trustedUser {
+		sendTextMessage("You are not trusted user")
+		return
+	}
+
+	bot.log.Debugf("[Message] %s: \"%s\" [%d, %d]", userName, userMessage, chatID, userID)
+
+	if bot.trustedChat == nil {
+		bot.trustedChat = newChat(telegramChat)
+	}
+
+	resp := bot.trustedChat.IncomingMessage(userMessage)
+	if resp != nil {
+		sendMessage(resp)
+	}
+}
+
+func shutdown() {
+	sendTextMessage("Shutdowning...")
+	close(bot.messageChan)
 }
 
 func sendTextMessage(text string) {
@@ -134,7 +140,7 @@ func sendTextMessage(text string) {
 	}
 }
 
-func sendMessage(message *types.Message) {
+func sendMessage(message *Message) {
 	if bot.trustedChat != nil {
 		if message.Photo != "" {
 			photo := tgbotapi.PhotoConfig{}
@@ -163,10 +169,6 @@ func sendMessage(message *types.Message) {
 	}
 }
 
-func sendStat() {
-	stat := dispatcher.CollectStat()
-	for _, text := range stat {
-		bot.log.Info(text)
-		sendTextMessage(text)
-	}
+func Post(msg *Message) {
+	bot.messageChan <- msg
 }

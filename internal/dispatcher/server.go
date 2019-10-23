@@ -205,11 +205,11 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	}
 
 	router.HandleFunc("/task/{task}", editTaskHandler).Methods("GET", "POST")
-	router.HandleFunc("/task/{task}/{action}", actionTaskHandler).Methods("GET")
 	router.HandleFunc("/task/stop/{task}", stopTaskHandler).Methods("GET")
 	router.HandleFunc("/task/delete/{task}", deleteTaskHandler).Methods("GET")
 	router.HandleFunc("/task/pause/{task}", suspendTaskHandler).Methods("GET")
 	router.HandleFunc("/task/run/{task}", runTaskHandler).Methods("GET")
+	router.HandleFunc("/task/{task}/{action}", actionTaskHandler).Methods("GET")
 
 	router.PathPrefix("/ui/").Handler(http.StripPrefix("/ui/", http.FileServer(http.Dir(utils.Configuration.Other.Content+"/web/"))))
 	router.Use(setupAccessLog)

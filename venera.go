@@ -9,8 +9,6 @@ import (
 	"runtime"
 	"sync"
 
-	"racoondev.tk/gitea/racoon/venera/internal/interactive"
-
 	"github.com/ccding/go-logging/logging"
 
 	"racoondev.tk/gitea/racoon/venera/internal/bot"
@@ -67,14 +65,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	botChannel, err := bot.Initialize(ctx, logger, &wgBot, utils.Configuration.Telegram.Token,
+	err = bot.Initialize(ctx, logger, &wgBot, utils.Configuration.Telegram.Token,
 		utils.Configuration.Telegram.TrustedUser)
 	if err != nil {
 		logger.Critical(err)
 		os.Exit(1)
 	}
-
-	interactive.Initialize(logger, database, botChannel)
 
 	wgDispatcher := sync.WaitGroup{}
 	dispatcher.RunServer(logger, &wgDispatcher)

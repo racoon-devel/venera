@@ -130,11 +130,3 @@ func favourHandler(w http.ResponseWriter, r *http.Request) {
 	dispatcher.db.Favourite(uint(id))
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 }
-
-func FavourPerson(personID uint) {
-	dispatcher.db.Favourite(personID)
-}
-
-func DropPerson(personID uint) {
-	dispatcher.db.DeletePerson(personID)
-}

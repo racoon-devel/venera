@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"racoondev.tk/gitea/racoon/venera/internal/interactive"
+	"racoondev.tk/gitea/racoon/venera/internal/bot"
 
 	"github.com/ccding/go-logging/logging"
 
@@ -120,10 +120,10 @@ func (session *tinderSearchSession) Results() []*types.Person {
 			session.mutex.Lock()
 			defer session.mutex.Unlock()
 
-			top := session.top.Get()
-			for _, person := range top {
-				interactive.PostResult(&TinderProvider{}, &person)
-			}
+			//top := session.top.Get()
+			//for _, person := range top {
+			//interactive.PostResult(&TinderProvider{}, &person)
+			//}
 
 			session.top.Clear()
 		}()
@@ -231,4 +231,25 @@ func (session *tinderSearchSession) GetStat() map[string]uint32 {
 	stat["Errors"] = atomic.SwapUint32(&session.state.Stat.Errors, 0)
 
 	return stat
+}
+
+func postPerson(person *types.PersonRecord) {
+	msg := bot.Message{}
+	msg.Content = webui.DecorPerson(&person.Person)
+	msg.Photo = person.Person.Photo[0]
+	msg.PhotoCaption = person.Person.Name
+
+	actions := TinderProvider{}.GetResultActions(person)
+
+	dropAction := types.Action{Title: "Drop",
+		Command: fmt.Sprintf("/drop %d", person.ID)}
+	actions = append(actions, dropAction)
+
+	if !person.Favourite {
+		favouriteAction := types.Action{Title: "Add to Favourites",
+			Command: fmt.Sprintf("/favour %d", person.ID)}
+		actions = append(actions, favouriteAction)
+	}
+
+	bot.Post(&msg)
 }

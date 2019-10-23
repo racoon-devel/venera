@@ -50,6 +50,8 @@ func Initialize(log *logging.Logger, db *storage.Storage) error {
 		task.Execute()
 	}
 
+	registerBotCommands()
+
 	dispatcher.log.Debugf("Dispatcher inited")
 
 	return nil
