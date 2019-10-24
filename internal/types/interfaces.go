@@ -20,28 +20,31 @@ const (
 
 // SearchSession - search session of some provider
 type SearchSession interface {
-	Process(ctx context.Context)
+	Process(ctx context.Context, taskID uint)
 	Reset()
 
 	Status() SessionStatus
 	GetStat() map[string]uint32
+	GetLastError() error
 
 	SaveState() string
 	LoadState(string) error
 
-	Results() []*Person
+	Poll()
 	Action(action string, params url.Values) error
-
 	Update(w http.ResponseWriter, r *http.Request) (bool, error)
 }
 
-// Provider - object for searching people in some social network
 type Provider interface {
 	ID() string
-	GetSearchSession(log *logging.Logger, r *http.Request) (SearchSession, error)
-	RestoreSearchSession(log *logging.Logger, state string) SearchSession
-	GetResultActions(result *PersonRecord) []Action
+
+	SetLogger(log *logging.Logger)
 	SetupRouter(router *mux.Router)
+
+	CreateSearchSession(r *http.Request) (SearchSession, error)
+	RestoreSearchSession(state string) SearchSession
+
+	GetResultActions(result *PersonRecord) []Action
 }
 
 type Rater interface {

@@ -19,6 +19,7 @@ func (session *tinderSearchSession) raise(err error) {
 
 	session.log.Criticalf("tinder: %+v", err)
 	session.status = types.StatusError
+	session.lastError = err
 }
 
 func (session *tinderSearchSession) repeat(ctx context.Context, handler func() error) {

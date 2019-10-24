@@ -8,8 +8,11 @@ import (
 	"sync"
 	"time"
 
+	"racoondev.tk/gitea/racoon/venera/internal/bot"
+
 	"github.com/ccding/go-logging/logging"
 
+	"racoondev.tk/gitea/racoon/venera/internal/storage"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/webui"
 )
@@ -20,16 +23,18 @@ const (
 	ModeIdle = iota
 	ModeActive
 
-	pollingInterval time.Duration = 2 * time.Minute
+	pollingInterval time.Duration = 20 * time.Second
+	statInterval    time.Duration = 50 * time.Second
 )
 
 type Task struct {
 	types.TaskRecord
-	session types.SearchSession
-	wg      sync.WaitGroup
-	cancel  context.CancelFunc
-	log     *logging.Logger
-	timer   *time.Ticker
+	session      types.SearchSession
+	wg           sync.WaitGroup
+	cancel       context.CancelFunc
+	log          *logging.Logger
+	timer        *time.Ticker
+	lastStatTime time.Time
 }
 
 type TaskInfo struct {
@@ -70,10 +75,11 @@ func (task *Task) start() {
 	go func() {
 		defer task.wg.Done()
 		task.log.Infof("Task %s:#%d started", task.Provider, task.ID)
-		task.session.Process(ctx)
+		task.session.Process(ctx, task.ID)
 	}()
 
 	task.timer = time.NewTicker(pollingInterval)
+	task.lastStatTime = time.Now()
 	timerCtx, _ := context.WithCancel(ctx)
 
 	go func(ctx context.Context) {
@@ -126,13 +132,13 @@ func (task *Task) Stop() {
 
 func (task *Task) poll() {
 	task.CurrentState = task.session.SaveState()
-	dispatcher.db.UpdateTask(&task.TaskRecord)
-	matches := task.session.Results()
-	for _, match := range matches {
-		dispatcher.db.AppendPerson(match, task.ID, task.Provider)
-	}
+	storage.UpdateTask(&task.TaskRecord)
+	task.session.Poll()
 
-	dispatcher.log.Infof("polling: task %s:#%d got %d results", task.Provider, task.ID, len(matches))
+	if now := time.Now(); now.Sub(task.lastStatTime) >= statInterval {
+		task.lastStatTime = now
+		task.SendStat()
+	}
 }
 
 func (task *Task) WebUpdate(w http.ResponseWriter, r *http.Request) (bool, error) {
@@ -140,7 +146,7 @@ func (task *Task) WebUpdate(w http.ResponseWriter, r *http.Request) (bool, error
 	updated, err := task.session.Update(w, r)
 	if updated {
 		task.CurrentState = task.session.SaveState()
-		dispatcher.db.UpdateTask(&task.TaskRecord)
+		storage.UpdateTask(&task.TaskRecord)
 
 		if task.Mode == ModeActive {
 			task.Suspend()
@@ -157,7 +163,7 @@ func (task *Task) Action(action string, params url.Values) error {
 	return task.session.Action(action, params)
 }
 
-func (task *Task) GetStat() string {
+func (task *Task) SendStat() {
 	result := fmt.Sprintf("<b>Task #%d [ %s ]</b>\n\n", task.ID, task.Provider)
 	result += fmt.Sprintf("<i>Status:</i> %s\n", webui.StatusToHumanReadable(task.session.Status()))
 	stat := task.session.GetStat()
@@ -165,5 +171,6 @@ func (task *Task) GetStat() string {
 		result += fmt.Sprintf("<i>%s:</i> %d\n", title, value)
 	}
 
-	return result
+	msg := bot.Message{Content: result}
+	bot.Post(&msg)
 }

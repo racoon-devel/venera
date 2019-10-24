@@ -11,6 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"racoondev.tk/gitea/racoon/venera/internal/storage"
+
 	"racoondev.tk/gitea/racoon/venera/internal/bot"
 
 	"github.com/ccding/go-logging/logging"
@@ -30,7 +32,7 @@ type tinderStat struct {
 
 type tinderSessionState struct {
 	Search           searchSettings
-	Top              []types.Person
+	Top              []ListItem
 	Stat             tinderStat
 	LastSuperlikeUpd time.Time
 }
@@ -41,16 +43,13 @@ type tinderSearchSession struct {
 	status    types.SessionStatus
 	lastError error
 	mutex     sync.Mutex
-	results   []*types.Person
 
-	api   *tindergo.TinderGo
-	log   *logging.Logger
-	rater *tinderRater
-	top   *topList
-}
-
-func NewSession(search *searchSettings, log *logging.Logger) *tinderSearchSession {
-	return &tinderSearchSession{state: tinderSessionState{Search: *search}, log: log}
+	provider TinderProvider
+	taskID   uint
+	api      *tindergo.TinderGo
+	log      *logging.Logger
+	rater    *tinderRater
+	top      *topList
 }
 
 func (session *tinderSearchSession) SaveState() string {
@@ -84,6 +83,8 @@ func (session *tinderSearchSession) LoadState(state string) error {
 func (session *tinderSearchSession) Reset() {
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
+
+	// TODO: wtf ??
 }
 
 func (session *tinderSearchSession) Status() types.SessionStatus {
@@ -92,7 +93,13 @@ func (session *tinderSearchSession) Status() types.SessionStatus {
 	return session.status
 }
 
-func (session *tinderSearchSession) Process(ctx context.Context) {
+func (session *tinderSearchSession) GetLastError() error {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+	return session.lastError
+}
+
+func (session *tinderSearchSession) Process(ctx context.Context, taskID uint) {
 	defer func() {
 		if r := recover(); r != nil {
 			session.log.Errorf("Tinder session panic: %+v. Recovered", r)
@@ -102,34 +109,33 @@ func (session *tinderSearchSession) Process(ctx context.Context) {
 			session.status = types.StatusStopped
 		}
 	}()
+
+	session.taskID = taskID
 	session.process(ctx)
 }
 
-func (session *tinderSearchSession) Results() []*types.Person {
+func (session *tinderSearchSession) Poll() {
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
-	result := session.results
-	session.results = make([]*types.Person, 0)
 
 	now := time.Now()
 	if now.Sub(session.state.LastSuperlikeUpd) >= superlikeRefreshPeriod {
 		session.state.LastSuperlikeUpd = now
-		go func() {
-			// очень некрасиво...
-			<-time.After(5 * time.Second)
-			session.mutex.Lock()
-			defer session.mutex.Unlock()
+		top := session.top.Get()
+		for _, item := range top {
+			person, err := storage.LoadPerson(item.ID)
+			if err != nil {
+				continue
+			}
 
-			//top := session.top.Get()
-			//for _, person := range top {
-			//interactive.PostResult(&TinderProvider{}, &person)
-			//}
+			session.log.Infof("Person '%s' [id = %d, rating = %d] is on top today",
+				person.Person.Name, item.ID, item.Rating)
 
-			session.top.Clear()
-		}()
+			session.postPerson(person)
+		}
+
+		session.top.Clear()
 	}
-
-	return result
 }
 
 func listToString(list []string) string {
@@ -233,13 +239,13 @@ func (session *tinderSearchSession) GetStat() map[string]uint32 {
 	return stat
 }
 
-func postPerson(person *types.PersonRecord) {
+func (session *tinderSearchSession) postPerson(person *types.PersonRecord) {
 	msg := bot.Message{}
 	msg.Content = webui.DecorPerson(&person.Person)
 	msg.Photo = person.Person.Photo[0]
 	msg.PhotoCaption = person.Person.Name
 
-	actions := TinderProvider{}.GetResultActions(person)
+	actions := session.provider.GetResultActions(person)
 
 	dropAction := types.Action{Title: "Drop",
 		Command: fmt.Sprintf("/drop %d", person.ID)}
@@ -250,6 +256,8 @@ func postPerson(person *types.PersonRecord) {
 			Command: fmt.Sprintf("/favour %d", person.ID)}
 		actions = append(actions, favouriteAction)
 	}
+
+	msg.Actions = actions
 
 	bot.Post(&msg)
 }

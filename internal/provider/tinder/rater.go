@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	minBioLength = 20
+	minBioLength = 40
 )
 
 type tinderRater struct {

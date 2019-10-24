@@ -3,21 +3,24 @@ package tinder
 import (
 	"sort"
 	"sync"
-
-	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
 
+type ListItem struct {
+	ID     uint
+	Rating int
+}
+
 type topList struct {
-	items []types.Person
+	items []ListItem
 	mu    sync.Mutex
 	size  uint
 }
 
 func newTopList(size uint) *topList {
-	return &topList{items: make([]types.Person, 0), size: size}
+	return &topList{items: make([]ListItem, 0), size: size}
 }
 
-func loadTopList(size uint, top []types.Person) *topList {
+func loadTopList(size uint, top []ListItem) *topList {
 	list := newTopList(size)
 	count := len(top)
 	if uint(count) > size {
@@ -25,13 +28,13 @@ func loadTopList(size uint, top []types.Person) *topList {
 	}
 
 	for i := 0; i < count; i++ {
-		list.Push(top[i])
+		list.Push(top[i].ID, top[i].Rating)
 	}
 
 	return list
 }
 
-func (self *topList) Push(person types.Person) {
+func (self *topList) Push(personRecordID uint, rating int) {
 	self.mu.Lock()
 	defer self.mu.Unlock()
 
@@ -39,13 +42,15 @@ func (self *topList) Push(person types.Person) {
 		return self.items[i].Rating > self.items[j].Rating
 	}
 
+	item := ListItem{ID: personRecordID, Rating: rating}
+
 	if uint(len(self.items)) < self.size {
-		self.items = append(self.items, person)
+		self.items = append(self.items, item)
 		sort.SliceStable(self.items, comparer)
 		return
 	}
 
-	if person.Rating < self.items[self.size-1].Rating {
+	if item.Rating < self.items[self.size-1].Rating {
 		return
 	}
 
@@ -57,15 +62,15 @@ func (self *topList) Push(person types.Person) {
 	}
 
 	self.items = self.items[:min+copy(self.items[min:], self.items[min+1:])]
-	self.items = append(self.items, person)
+	self.items = append(self.items, item)
 	sort.SliceStable(self.items, comparer)
 }
 
-func (self *topList) Get() []types.Person {
+func (self *topList) Get() []ListItem {
 	self.mu.Lock()
 	defer self.mu.Unlock()
 
-	result := make([]types.Person, len(self.items))
+	result := make([]ListItem, len(self.items))
 	copy(result, self.items)
 	return result
 }
@@ -74,5 +79,5 @@ func (self *topList) Clear() {
 	self.mu.Lock()
 	defer self.mu.Unlock()
 
-	self.items = make([]types.Person, 0)
+	self.items = make([]ListItem, 0)
 }

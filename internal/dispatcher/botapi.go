@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"racoondev.tk/gitea/racoon/venera/internal/bot"
+	"racoondev.tk/gitea/racoon/venera/internal/storage"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
 
@@ -106,7 +107,7 @@ func personFavourHandler(args []string) (*bot.Message, error) {
 		return nil, fmt.Errorf("Invalid person ID: %s: %+v", args[0], err)
 	}
 
-	dispatcher.db.Favourite(uint(personID))
+	storage.Favourite(uint(personID))
 	return &bot.Message{Content: "Done"}, nil
 }
 
@@ -116,7 +117,7 @@ func personDropHandler(args []string) (*bot.Message, error) {
 		return nil, fmt.Errorf("Invalid person ID: %s: %+v", args[0], err)
 	}
 
-	dispatcher.db.DeletePerson(uint(personID))
+	storage.DeletePerson(uint(personID))
 	return &bot.Message{Content: "Done"}, nil
 }
 

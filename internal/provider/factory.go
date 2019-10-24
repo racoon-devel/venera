@@ -3,6 +3,8 @@ package provider
 import (
 	"fmt"
 
+	"github.com/ccding/go-logging/logging"
+
 	"racoondev.tk/gitea/racoon/venera/internal/provider/tinder"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
@@ -12,6 +14,12 @@ var (
 		"tinder": new(tinder.TinderProvider),
 	}
 )
+
+func SetLogger(log *logging.Logger) {
+	for _, provider := range providers {
+		provider.SetLogger(log)
+	}
+}
 
 // GetAvailable - show all available providers
 func GetAvailable() []string {

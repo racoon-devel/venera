@@ -6,6 +6,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"racoondev.tk/gitea/racoon/venera/internal/storage"
+
 	"racoondev.tk/gitea/racoon/tindergo"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
@@ -14,7 +16,7 @@ import (
 const (
 	maxSuperLikes          uint = 5
 	superlikeRefreshPeriod      = 140 * time.Second
-	// TODO: в SearchSettings
+	// TODO: randomize
 	locationLatitude   float32 = 55.741676
 	locationLongtitude float32 = 37.624928
 
@@ -64,7 +66,6 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 
 	session.mutex.Lock()
 	session.status = types.StatusRunning
-	session.results = make([]*types.Person, 0)
 	session.mutex.Unlock()
 
 	session.api = tindergo.New()
@@ -113,7 +114,6 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 		toLike := rand.Intn(2)
 
 		if rating > 0 || (rating == 0 && toLike == 1) {
-			session.top.Push(person)
 			session.log.Debugf("Like '%s' rating(%d)", person.Name, rating)
 			session.repeat(ctx, func() error {
 				_, err := session.api.Like(record)
@@ -137,8 +137,10 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 }
 
 func (session *tinderSearchSession) appendResult(person *types.Person) {
-	session.mutex.Lock()
-	defer session.mutex.Unlock()
-
-	session.results = append(session.results, person)
+	id, err := storage.AppendPerson(person, session.taskID, session.provider.ID())
+	if err == nil {
+		session.mutex.Lock()
+		session.top.Push(id, person.Rating)
+		session.mutex.Unlock()
+	}
 }

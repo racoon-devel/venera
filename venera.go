@@ -49,8 +49,7 @@ func main() {
 
 	logger.Debug(utils.Configuration)
 
-	database, err := storage.Connect(utils.Configuration.GetConnectionString())
-	if err != nil {
+	if err := storage.Connect(utils.Configuration.GetConnectionString()); err != nil {
 		logger.Critical(err)
 		os.Exit(1)
 	}
@@ -60,12 +59,12 @@ func main() {
 	signalChannel := make(chan os.Signal)
 	signal.Notify(signalChannel, os.Interrupt, os.Kill)
 
-	if err := dispatcher.Initialize(logger, database); err != nil {
+	if err := dispatcher.Initialize(logger); err != nil {
 		logger.Critical(err)
 		os.Exit(1)
 	}
 
-	err = bot.Initialize(ctx, logger, &wgBot, utils.Configuration.Telegram.Token,
+	err := bot.Initialize(ctx, logger, &wgBot, utils.Configuration.Telegram.Token,
 		utils.Configuration.Telegram.TrustedUser)
 	if err != nil {
 		logger.Critical(err)
@@ -77,10 +76,9 @@ func main() {
 
 	<-signalChannel
 
-	shutdownBot()
-	wgBot.Wait()
-
 	dispatcher.Stop()
 	wgDispatcher.Wait()
 
+	shutdownBot()
+	wgBot.Wait()
 }

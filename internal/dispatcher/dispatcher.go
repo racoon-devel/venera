@@ -18,30 +18,30 @@ import (
 
 var dispatcher struct {
 	log        *logging.Logger
-	db         *storage.Storage
 	tasks      map[uint]*Task
 	mutex      sync.Mutex
 	httpServer http.Server
 }
 
-func Initialize(log *logging.Logger, db *storage.Storage) error {
+func Initialize(log *logging.Logger) error {
 	dispatcher.mutex.Lock()
 	defer dispatcher.mutex.Unlock()
 
 	dispatcher.log = log
-	dispatcher.db = db
+
+	provider.SetLogger(log)
 
 	if err := webui.LoadTemplates(); err != nil {
 		return err
 	}
 
 	dispatcher.tasks = make(map[uint]*Task, 0)
-	taskRecords := dispatcher.db.LoadTasks()
+	taskRecords := storage.LoadTasks()
 	providers := provider.All()
 
 	for _, record := range taskRecords {
 		provider := providers[record.Provider]
-		session := provider.RestoreSearchSession(dispatcher.log, record.CurrentState)
+		session := provider.RestoreSearchSession(record.CurrentState)
 
 		task := newTask(session, &record)
 		dispatcher.tasks[task.ID] = task
@@ -76,7 +76,7 @@ func getTaskProvider(taskID uint) types.Provider {
 
 func AppendTask(session types.SearchSession, provider string) {
 	record := types.TaskRecord{CurrentState: session.SaveState(), Provider: provider, Mode: ModeActive}
-	dispatcher.db.AppendTask(&record)
+	storage.AppendTask(&record)
 	task := newTask(session, &record)
 
 	dispatcher.mutex.Lock()
@@ -128,7 +128,7 @@ func taskAction(taskID uint, handler func(task *Task)) error {
 func StopTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Stop()
-		dispatcher.db.UpdateTask(&task.TaskRecord)
+		storage.UpdateTask(&task.TaskRecord)
 		dispatcher.log.Infof("Task #%d stopped", taskID)
 	})
 }
@@ -137,7 +137,7 @@ func DeleteTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Stop()
 		delete(dispatcher.tasks, taskID)
-		dispatcher.db.DeleteTask(&task.TaskRecord)
+		storage.DeleteTask(&task.TaskRecord)
 		dispatcher.log.Infof("Task #%d deleted", taskID)
 	})
 }
@@ -145,7 +145,7 @@ func DeleteTask(taskID uint) error {
 func SuspendTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Suspend()
-		dispatcher.db.UpdateTask(&task.TaskRecord)
+		storage.UpdateTask(&task.TaskRecord)
 		dispatcher.log.Infof("Task #%d suspended", taskID)
 	})
 }
@@ -153,24 +153,9 @@ func SuspendTask(taskID uint) error {
 func RunTask(taskID uint) error {
 	return taskAction(taskID, func(task *Task) {
 		task.Run()
-		dispatcher.db.UpdateTask(&task.TaskRecord)
+		storage.UpdateTask(&task.TaskRecord)
 		dispatcher.log.Infof("Task #%d started", taskID)
 	})
-}
-
-func CollectStat() []string {
-	dispatcher.mutex.Lock()
-	defer dispatcher.mutex.Unlock()
-
-	var result = make([]string, 0)
-
-	for _, task := range dispatcher.tasks {
-		if task.Mode == ModeActive {
-			result = append(result, task.GetStat())
-		}
-	}
-
-	return result
 }
 
 func Action(taskID uint, action string, args url.Values) error {
