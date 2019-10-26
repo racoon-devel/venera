@@ -84,7 +84,14 @@ func (session *tinderSearchSession) Reset() {
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
 
-	// TODO: wtf ??
+	session.state.LastSuperlikeUpd = time.Time{}
+	atomic.StoreUint32(&session.state.Stat.Errors, 0)
+	atomic.StoreUint32(&session.state.Stat.Liked, 0)
+	atomic.StoreUint32(&session.state.Stat.Passed, 0)
+	atomic.StoreUint32(&session.state.Stat.Retrieved, 0)
+	atomic.StoreUint32(&session.state.Stat.Superliked, 0)
+
+	session.state.Top = make([]ListItem, 0)
 }
 
 func (session *tinderSearchSession) Status() types.SessionStatus {

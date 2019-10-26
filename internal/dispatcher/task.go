@@ -127,6 +127,9 @@ func (task *Task) Stop() {
 	if task.Mode != ModeIdle {
 		task.Suspend()
 		task.session.Reset()
+
+		task.CurrentState = task.session.SaveState()
+		storage.UpdateTask(&task.TaskRecord)
 	}
 }
 
