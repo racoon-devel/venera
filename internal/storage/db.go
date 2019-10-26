@@ -10,53 +10,51 @@ import (
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
 
-type Storage struct {
-	db *gorm.DB
-}
+var db *gorm.DB
 
-func Connect(connectionString string) (*Storage, error) {
-	storage := &Storage{}
+func Connect(connectionString string) error {
 	var err error
-	storage.db, err = gorm.Open("postgres", connectionString)
+	db, err = gorm.Open("postgres", connectionString)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	storage.db.AutoMigrate(&types.TaskRecord{}, &types.PersonRecord{})
-	return storage, err
+	return db.AutoMigrate(&types.TaskRecord{}, &types.PersonRecord{}).Error
 }
 
-func (self *Storage) LoadTasks() []types.TaskRecord {
+func LoadTasks() []types.TaskRecord {
 	result := make([]types.TaskRecord, 0)
-	self.db.Find(&result)
+	db.Find(&result)
 	return result
 }
 
-func (self *Storage) AppendTask(task *types.TaskRecord) {
-	self.db.Create(task)
+func AppendTask(task *types.TaskRecord) error {
+	return db.Create(task).Error
 }
 
-func (self *Storage) UpdateTask(task *types.TaskRecord) {
-	self.db.Save(task)
+func UpdateTask(task *types.TaskRecord) {
+	db.Save(task)
 }
 
-func (self *Storage) DeleteTask(task *types.TaskRecord) {
-	self.db.Delete(task)
+func DeleteTask(task *types.TaskRecord) {
+	db.Delete(&types.PersonRecord{}, "task_id = ?", task.ID)
+	db.Delete(task)
 }
 
-func (self *Storage) AppendPerson(person *types.Person, taskID uint, provider string) {
+func AppendPerson(person *types.Person, taskID uint, provider string) (uint, error) {
 	data, err := json.Marshal(person)
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 
 	record := types.PersonRecord{TaskID: taskID, Description: string(data), Rating: person.Rating, PersonID: provider + "." + person.UserID}
-	self.db.Create(&record)
+	err = db.Create(&record).Error
+	return record.ID, err
 }
 
-func (self *Storage) LoadPersons(taskID uint, ascending bool, limit uint, offset uint, favourite bool, rating uint) ([]types.PersonRecord, uint, error) {
+func LoadPersons(taskID uint, ascending bool, limit uint, offset uint, favourite bool, rating uint) ([]types.PersonRecord, uint, error) {
 	persons := make([]types.PersonRecord, 0)
-	ctx := self.db
+	ctx := db
 
 	if ascending {
 		ctx = ctx.Order("rating asc, created_at")
@@ -92,9 +90,9 @@ func (self *Storage) LoadPersons(taskID uint, ascending bool, limit uint, offset
 	return persons, count, nil
 }
 
-func (self *Storage) LoadPerson(personID uint) (*types.PersonRecord, error) {
+func LoadPerson(personID uint) (*types.PersonRecord, error) {
 	record := types.PersonRecord{}
-	self.db.First(&record, personID)
+	db.First(&record, personID)
 
 	if record.Description == "" {
 		return nil, fmt.Errorf("Result has been deleted")
@@ -108,21 +106,21 @@ func (self *Storage) LoadPerson(personID uint) (*types.PersonRecord, error) {
 	return &record, nil
 }
 
-func (self *Storage) DeletePerson(personID uint) {
+func DeletePerson(personID uint) {
 	record := types.PersonRecord{}
 	record.ID = personID
-	self.db.Delete(&record)
+	db.Delete(&record)
 }
 
-func (self *Storage) Favourite(personID uint) {
+func Favourite(personID uint) {
 	record := types.PersonRecord{}
 	record.ID = personID
-	self.db.Model(&record).Update("favourite", true)
+	db.Model(&record).Update("favourite", true)
 }
 
-func (self *Storage) SearchPerson(userID string) *types.PersonRecord {
+func SearchPerson(userID string) *types.PersonRecord {
 	record := types.PersonRecord{}
-	self.db.Model(&record).Where("person_id = ?", userID).First(&record)
+	db.Model(&record).Where("person_id = ?", userID).First(&record)
 	if record.PersonID != userID {
 		return nil
 	}

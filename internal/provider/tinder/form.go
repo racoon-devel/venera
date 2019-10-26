@@ -6,9 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ccding/go-logging/logging"
-
-	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
@@ -79,23 +76,4 @@ func parseForm(r *http.Request, editMode bool) (*searchSettings, *tinderAuth, er
 	ctx.AgeTo = uint(u)
 
 	return &ctx, auth, nil
-}
-
-func (ctx *TinderProvider) GetSearchSession(log *logging.Logger, r *http.Request) (types.SearchSession, error) {
-	settings, auth, err := parseForm(r, false)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := settings.SearchSettings.Validate(); err != nil {
-		return nil, err
-	}
-
-	if err := auth.RequestToken(); err != nil {
-		return nil, fmt.Errorf("Tinder auth failed: %+v", err)
-	}
-
-	settings.APIToken = auth.APIToken
-
-	return NewSession(settings, log), nil
 }

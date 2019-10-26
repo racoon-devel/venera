@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"racoondev.tk/gitea/racoon/venera/internal/storage"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/webui"
 )
@@ -47,11 +48,11 @@ func resultsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	res.Tasks = dispatcher.db.LoadTasks()
+	res.Tasks = storage.LoadTasks()
 
 	var err error
 	var persons []types.PersonRecord
-	persons, res.Total, err = dispatcher.db.LoadPersons(res.TaskFilter, res.Ascending, resultsPerPage, res.Page*resultsPerPage, res.Favourite, res.Rating)
+	persons, res.Total, err = storage.LoadPersons(res.TaskFilter, res.Ascending, resultsPerPage, res.Page*resultsPerPage, res.Favourite, res.Rating)
 	if err != nil {
 		webui.DisplayError(w, err)
 		return
@@ -95,7 +96,7 @@ func resultHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := dispatcher.db.LoadPerson(uint(id))
+	result, err := storage.LoadPerson(uint(id))
 	if err != nil {
 		webui.DisplayError(w, err)
 		return
@@ -116,7 +117,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dispatcher.db.DeletePerson(uint(id))
+	storage.DeletePerson(uint(id))
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 }
 func favourHandler(w http.ResponseWriter, r *http.Request) {
@@ -127,14 +128,6 @@ func favourHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dispatcher.db.Favourite(uint(id))
+	storage.Favourite(uint(id))
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
-}
-
-func FavourPerson(personID uint) {
-	dispatcher.db.Favourite(personID)
-}
-
-func DropPerson(personID uint) {
-	dispatcher.db.DeletePerson(personID)
 }
