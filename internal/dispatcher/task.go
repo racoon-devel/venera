@@ -142,6 +142,12 @@ func (task *Task) poll() {
 		task.lastStatTime = now
 		task.SendStat()
 	}
+
+	if err := task.session.GetLastError(); err != nil {
+		msg := bot.Message{ Content: fmt.Sprintf("Task #%d [ %s ] raised error: %+v",
+			task.ID, task.Provider, err)}
+		bot.Post( &msg )
+	}
 }
 
 func (task *Task) WebUpdate(w http.ResponseWriter, r *http.Request) (bool, error) {

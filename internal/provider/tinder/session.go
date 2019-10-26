@@ -104,7 +104,9 @@ func (session *tinderSearchSession) Status() types.SessionStatus {
 func (session *tinderSearchSession) GetLastError() error {
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
-	return session.lastError
+	err := session.lastError
+	session.lastError = nil
+	return err
 }
 
 func (session *tinderSearchSession) Process(ctx context.Context, taskID uint) {
@@ -223,10 +225,14 @@ func (session *tinderSearchSession) superlike(userID string) error {
 	api := tindergo.New()
 	api.SetAPIToken(session.state.Search.APIToken)
 
+	session.log.Debugf("Superlike %s...", userID)
+
 	resp, err := api.SuperLike(userID, "")
 	if err != nil {
 		return err
 	}
+
+	session.log.Debug(resp)
 
 	if resp.LimitExceeded {
 		return fmt.Errorf("Superlike limit exceeded")
@@ -273,7 +279,7 @@ func (session *tinderSearchSession) Action(action string, params url.Values) err
 		return session.superlike(ID)
 
 	case "unmatch":
-		fallthrough
+		return session.unmatch(ID)
 
 	default:
 		return fmt.Errorf("tinder: undefined action: '%s'", action)
