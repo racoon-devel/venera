@@ -35,6 +35,7 @@ type tinderSessionState struct {
 	Top              []ListItem
 	Stat             tinderStat
 	LastSuperlikeUpd time.Time
+	Matches map[string]types.Person
 }
 
 type tinderSearchSession struct {
@@ -143,6 +144,22 @@ func (session *tinderSearchSession) Poll() {
 
 		session.top.Clear()
 	}
+
+	matches, err := session.api.Matches()
+	if err == nil {
+		for _, match := range matches {
+			_, isUnique := session.state.Matches[match.ID]
+			if isUnique {
+				session.log.Infof("New match found! %s { isSuperliked: %t, isBoosted:%t }", match.Person.Name,
+					match.IsSuperLike, match.IsBoostMatch)
+				person := convertMatch(&match)
+				session.state.Matches[match.ID] = person
+				session.postMatchPerson( match.ID, &person)
+			}
+		}
+	}
+
+
 }
 
 func listToString(list []string) string {
@@ -199,25 +216,14 @@ func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Reques
 	return false, nil
 }
 
-func (session *tinderSearchSession) Action(action string, params url.Values) error {
-	if action != "superlike" {
-		return fmt.Errorf("tinder: undefined action: '%s'", action)
-	}
-
-	IDs, ok := params["id"]
-	if !ok || len(IDs) == 0 {
-		return fmt.Errorf("user ID missed")
-	}
-
-	ID := IDs[0]
-
+func (session *tinderSearchSession) superlike(userID string) error {
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
 
 	api := tindergo.New()
 	api.SetAPIToken(session.state.Search.APIToken)
 
-	resp, err := api.SuperLike(ID, "")
+	resp, err := api.SuperLike(userID, "")
 	if err != nil {
 		return err
 	}
@@ -233,6 +239,45 @@ func (session *tinderSearchSession) Action(action string, params url.Values) err
 	atomic.AddUint32(&session.state.Stat.Superliked, 1)
 
 	return nil
+}
+
+func (session *tinderSearchSession) unmatch(matchID string) error {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	api := tindergo.New()
+	api.SetAPIToken(session.state.Search.APIToken)
+
+	err := api.Unmatch(matchID)
+	if err != nil {
+		return err
+	}
+
+	delete(session.state.Matches, matchID)
+
+	session.log.Infof("Match '%s' unmatched", matchID)
+
+	return nil
+}
+
+func (session *tinderSearchSession) Action(action string, params url.Values) error {
+	IDs, ok := params["id"]
+	if !ok || len(IDs) == 0 {
+		return fmt.Errorf("user ID missed")
+	}
+
+	ID := IDs[0]
+
+	switch action {
+	case "superlike":
+		return session.superlike(ID)
+
+	case "unmatch":
+		fallthrough
+
+	default:
+		return fmt.Errorf("tinder: undefined action: '%s'", action)
+	}
 }
 
 func (session *tinderSearchSession) GetStat() map[string]uint32 {
@@ -265,6 +310,23 @@ func (session *tinderSearchSession) postPerson(person *types.PersonRecord) {
 	}
 
 	msg.Actions = actions
+
+	bot.Post(&msg)
+}
+
+func (session *tinderSearchSession) postMatchPerson( matchID string, person *types.Person) {
+	msg := bot.Message{}
+	msg.Content = webui.DecorPerson(person)
+
+	if len(person.Photo) != 0 {
+		msg.Photo = person.Photo[0]
+		msg.PhotoCaption = person.Name
+	}
+
+	msg.Actions = []types.Action{
+		types.Action{Title: "Unmatch",	Command: fmt.Sprintf("/action %d unmatch id %s",
+			session.taskID, matchID)},
+	}
 
 	bot.Post(&msg)
 }

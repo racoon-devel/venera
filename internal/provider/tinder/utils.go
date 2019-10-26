@@ -60,3 +60,16 @@ func convertPersonRecord(record *tindergo.RecsCoreUser) types.Person {
 
 	return person
 }
+
+func convertMatch(match *tindergo.Match) types.Person {
+	person := types.Person{UserID: match.Person.ID, Name: match.Person.Name, Bio: match.Person.Bio}
+	diff := time.Now().Sub(match.Person.BirthDate)
+	person.Age = uint(diff.Seconds() / 31207680)
+
+	person.Photo = make([]string, 0)
+	for _, photo := range match.Person.Photos {
+		person.Photo = append(person.Photo, photo.URL)
+	}
+
+	return person
+}

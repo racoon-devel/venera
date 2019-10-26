@@ -30,8 +30,6 @@ const (
 
 func (session *tinderSearchSession) setup(ctx context.Context) {
 	session.log.Debugf("tinder: authentification...")
-	session.mutex.Lock()
-	defer session.mutex.Unlock()
 
 	if session.state.LastSuperlikeUpd.IsZero() {
 		session.state.LastSuperlikeUpd = time.Now()
@@ -66,7 +64,6 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 
 	session.mutex.Lock()
 	session.status = types.StatusRunning
-	session.mutex.Unlock()
 
 	session.api = tindergo.New()
 	session.rater = &tinderRater{}
@@ -76,7 +73,13 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 		session.top = newTopList(maxSuperLikes)
 	}
 
+	if session.state.Matches == nil {
+		session.state.Matches = make(map[string]types.Person)
+	}
+
 	session.setup(ctx)
+
+	session.mutex.Unlock()
 
 	for {
 		for i := 0; i < requestPerSession; i++ {
