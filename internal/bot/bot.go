@@ -15,6 +15,11 @@ import (
 type Channel chan *Message
 type CommandHandler func(args []string, replyID string) (*Message, error)
 
+type requestData struct {
+	ctx context.Context
+	responseChannel chan string
+}
+
 var bot struct {
 	ctx         context.Context
 	log         *logging.Logger
@@ -59,6 +64,24 @@ func Initialize(ctx context.Context, logger *logging.Logger, wg *sync.WaitGroup,
 
 	return nil
 
+}
+
+func Post(msg *Message) {
+	bot.messageChan <- msg
+}
+
+func Request(ctx context.Context, text string) (string, error) {
+	responseChannel := make(chan string)
+	bot.messageChan <- newRequestMessage(ctx, text, responseChannel)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		case response := <-responseChannel:
+			return response, nil
+		}
+	}
 }
 
 func botLoop() {
@@ -113,7 +136,7 @@ func handleUpdates(update *tgbotapi.Update) {
 
 		// Некрасиво, но работает
 		if strings.Index(userMessage, "/drop") == 0 {
-			bot.api.DeleteMessage(tgbotapi.DeleteMessageConfig{ChatID:chatID, MessageID:update.CallbackQuery.Message.MessageID})
+			bot.api.DeleteMessage(tgbotapi.DeleteMessageConfig{ChatID: chatID, MessageID: update.CallbackQuery.Message.MessageID})
 		}
 	} else {
 		return
@@ -160,9 +183,9 @@ func sendMessage(message *Message) {
 				bot.log.Errorf("Reply to message failed: %+v", err)
 			}
 		}
-	}
-}
 
-func Post(msg *Message) {
-	bot.messageChan <- msg
+		if message.messageType == messageRequest {
+			bot.trustedChat.Request(message.request)
+		}
+	}
 }

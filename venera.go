@@ -76,9 +76,13 @@ func main() {
 
 	<-signalChannel
 
+	logger.Info("Dispatcher shutdowning...")
 	dispatcher.Stop()
 	wgDispatcher.Wait()
+	logger.Info("Dispatcher shutdowned")
 
+	logger.Info("Bot shutdowning...")
 	shutdownBot()
 	wgBot.Wait()
+	logger.Info("Bot shutdowned")
 }

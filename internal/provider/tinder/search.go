@@ -3,6 +3,7 @@ package tinder
 import (
 	"context"
 	"math/rand"
+	"racoondev.tk/gitea/racoon/venera/internal/bot"
 	"sync/atomic"
 	"time"
 
@@ -27,6 +28,31 @@ const (
 	delaySessionMinMs uint32 = 1.0 * 60 * 60 * 1000
 	delaySessionMaxMs uint32 = 3.0 * 60 * 60 * 1000
 )
+
+func (session *tinderSearchSession) auth(ctx context.Context) error {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	auth := newTinderAuth(session.state.Search.Tel)
+	if err := auth.RequestCode(); err != nil {
+		return err
+	}
+
+	code, err := bot.Request(ctx, "Require Tinder authentification token")
+	if err != nil {
+		return err
+	}
+
+	auth.LoginCode = code
+	if err := auth.RequestToken(); err != nil {
+		return err
+	}
+
+	session.log.Infof("Tinder API token retrieved: %s", auth.APIToken)
+
+	session.state.Search.APIToken = auth.APIToken
+	return nil
+}
 
 func (session *tinderSearchSession) setup(ctx context.Context) {
 	session.log.Debugf("tinder: authentification...")

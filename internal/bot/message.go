@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
@@ -9,11 +10,19 @@ const (
 	messageSingle = iota
 	messageMenu
 	messageReply
+	messageRequest
 )
 
 type Message struct {
-	messageType  int
-	replyID      string
+	messageType int
+
+	// messageReply section
+	replyID string
+
+	// messageRequest section
+	request *requestData
+
+	// Some content
 	Content      string
 	Photo        string
 	PhotoCaption string
@@ -26,6 +35,14 @@ func NewMenuMessage(content string, actions []types.Action) *Message {
 
 func NewReplyMessage(text string, replyID string) *Message {
 	return &Message{messageType: messageReply, Content: text, replyID: replyID}
+}
+
+func newRequestMessage(ctx context.Context, text string, response chan string) *Message {
+	return &Message{
+		messageType: messageRequest,
+		request:     &requestData{ctx: ctx, responseChannel: response},
+		Content:     text,
+	}
 }
 
 func makeRawMessage(chatID int64, message *Message) []tgbotapi.Chattable {

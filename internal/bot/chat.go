@@ -7,8 +7,15 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
+const (
+	stateMessaging = iota
+	stateRequesting
+)
+
 type chat struct {
 	chat *tgbotapi.Chat
+	state int
+	request *requestData
 }
 
 func newChat(telegramChat *tgbotapi.Chat) *chat {
@@ -18,6 +25,13 @@ func newChat(telegramChat *tgbotapi.Chat) *chat {
 func (self *chat) IncomingMessage(message string, replyID string) *Message {
 	cmdMutex.Lock()
 	defer cmdMutex.Unlock()
+
+	if self.state == stateRequesting {
+		self.request.responseChannel <- message
+		self.request = nil
+		self.state = stateMessaging
+		return nil
+	}
 
 	args := strings.Split(message, " ")
 	if args[0][0] == '/' {
@@ -47,6 +61,15 @@ func (self *chat) IncomingMessage(message string, replyID string) *Message {
 
 func (self *chat) ChatID() int64 {
 	return self.chat.ID
+}
+
+func(self *chat) Request(request *requestData) {
+	if self.state == stateRequesting {
+		// хуй знает, что делать
+	}
+
+	self.state = stateRequesting
+	self.request = request
 }
 
 func displayError(err error, replyID string) *Message {
