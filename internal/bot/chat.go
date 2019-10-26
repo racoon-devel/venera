@@ -15,7 +15,7 @@ func newChat(telegramChat *tgbotapi.Chat) *chat {
 	return &chat{chat: telegramChat}
 }
 
-func (self *chat) IncomingMessage(message string) *Message {
+func (self *chat) IncomingMessage(message string, replyID string) *Message {
 	cmdMutex.Lock()
 	defer cmdMutex.Unlock()
 
@@ -24,21 +24,21 @@ func (self *chat) IncomingMessage(message string) *Message {
 		cmd, ok := commandSet[args[0][1:]]
 		if ok {
 			if len(args)-1 < int(cmd.Args) {
-				return displayError(fmt.Errorf("Run command '%s' failed: not enough actual parameters", args[0]))
+				return displayError(fmt.Errorf("Run command '%s' failed: not enough actual parameters", args[0]), replyID)
 			}
-			msg, err := cmd.Run(args[1:])
+			msg, err := cmd.Run(args[1:], replyID)
 			if err != nil {
-				return displayError(fmt.Errorf("Run command '%s' failed: %+v", args[0], err))
+				return displayError(fmt.Errorf("Run command '%s' failed: %+v", args[0], err), replyID)
 			}
 
 			return msg
 		} else {
-			return displayError(fmt.Errorf("Command '%s' undefined", args[0]))
+			return displayError(fmt.Errorf("Command '%s' undefined", args[0]), replyID)
 		}
 	}
 
 	if defaultCommand != nil {
-		msg, _ := defaultCommand.Run([]string{})
+		msg, _ := defaultCommand.Run([]string{}, "")
 		return msg
 	}
 
@@ -49,8 +49,12 @@ func (self *chat) ChatID() int64 {
 	return self.chat.ID
 }
 
-func displayError(err error) *Message {
-	msg := Message{Content: err.Error()}
+func displayError(err error, replyID string) *Message {
+
 	bot.log.Error(err)
-	return &msg
+	if replyID == "" {
+		return &Message{Content: err.Error()}
+	}
+
+	return NewReplyMessage(err.Error(), replyID)
 }

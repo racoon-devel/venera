@@ -3,6 +3,7 @@ package dispatcher
 import (
 	"fmt"
 	"net/url"
+	"racoondev.tk/gitea/racoon/venera/internal/webui"
 	"strconv"
 
 	"racoondev.tk/gitea/racoon/venera/internal/bot"
@@ -24,14 +25,14 @@ func registerBotCommands() {
 	bot.SetDefaultCommand("list")
 }
 
-func taskListHandler(args []string) (*bot.Message, error) {
+func taskListHandler(args []string, replyID string) (*bot.Message, error) {
 	tasks := Describe()
 	if len(tasks) == 0 {
 		return &bot.Message{Content: "No tasks"}, nil
 	}
 
-	msg := bot.Message{Content: "Select task"}
-	msg.Actions = make([]types.Action, 0)
+	actions := make([]types.Action, 0)
+	content := "Select task:\n"
 
 	for _, task := range tasks {
 		action := types.Action{
@@ -39,13 +40,14 @@ func taskListHandler(args []string) (*bot.Message, error) {
 			Command: fmt.Sprintf("/task %d", task.ID),
 		}
 
-		msg.Actions = append(msg.Actions, action)
+		actions = append(actions, action)
+		content += action.Title + " " + webui.StatusToHumanReadable(task.Status) + "\n"
 	}
 
-	return &msg, nil
+	return bot.NewMenuMessage(content, actions), nil
 }
 
-func taskHandler(args []string) (*bot.Message, error) {
+func taskHandler(args []string, replyID string) (*bot.Message, error) {
 	taskID := args[0]
 	id, err := strconv.ParseUint(taskID, 10, 32)
 	if err != nil {
@@ -57,19 +59,18 @@ func taskHandler(args []string) (*bot.Message, error) {
 		return nil, err
 	}
 
-	msg := &bot.Message{Content: "Select action for task"}
-	msg.Actions = []types.Action{
+	actions  := []types.Action{
 		types.Action{Title: "Stop", Command: fmt.Sprintf("/stop %s", taskID)},
 		types.Action{Title: "Delete", Command: fmt.Sprintf("/delete %s", taskID)},
 	}
 
 	if taskInfo.Mode == ModeIdle {
-		msg.Actions = append(msg.Actions, types.Action{Title: "Run", Command: fmt.Sprintf("/run %s", taskID)})
+		actions = append(actions, types.Action{Title: "Run", Command: fmt.Sprintf("/run %s", taskID)})
 	} else {
-		msg.Actions = append(msg.Actions, types.Action{Title: "Suspend", Command: fmt.Sprintf("/suspend %s", taskID)})
+		actions = append(actions, types.Action{Title: "Suspend", Command: fmt.Sprintf("/suspend %s", taskID)})
 	}
 
-	return msg, nil
+	return bot.NewMenuMessage("Select action for task", actions), nil
 }
 
 func taskControlHandler(arg string, handler func(taskID uint) error, msg string) (*bot.Message, error) {
@@ -85,43 +86,43 @@ func taskControlHandler(arg string, handler func(taskID uint) error, msg string)
 	return &bot.Message{Content: fmt.Sprintf("Task #%d %s", taskID, msg)}, nil
 }
 
-func taskRunHandler(args []string) (*bot.Message, error) {
+func taskRunHandler(args []string, replyID string) (*bot.Message, error) {
 	return taskControlHandler(args[0], RunTask, "started")
 }
 
-func taskSuspendHandler(args []string) (*bot.Message, error) {
+func taskSuspendHandler(args []string, replyID string) (*bot.Message, error) {
 	return taskControlHandler(args[0], SuspendTask, "suspended")
 }
 
-func taskStopHandler(args []string) (*bot.Message, error) {
+func taskStopHandler(args []string, replyID string) (*bot.Message, error) {
 	return taskControlHandler(args[0], StopTask, "stopped")
 }
 
-func taskDeleteHandler(args []string) (*bot.Message, error) {
+func taskDeleteHandler(args []string, replyID string) (*bot.Message, error) {
 	return taskControlHandler(args[0], DeleteTask, "deleted")
 }
 
-func personFavourHandler(args []string) (*bot.Message, error) {
+func personFavourHandler(args []string, replyID string) (*bot.Message, error) {
 	personID, err := strconv.ParseUint(args[0], 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid person ID: %s: %+v", args[0], err)
 	}
 
 	storage.Favourite(uint(personID))
-	return &bot.Message{Content: "Done"}, nil
+	return bot.NewReplyMessage("Done", replyID), nil
 }
 
-func personDropHandler(args []string) (*bot.Message, error) {
+func personDropHandler(args []string, replyID string) (*bot.Message, error) {
 	personID, err := strconv.ParseUint(args[0], 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid person ID: %s: %+v", args[0], err)
 	}
 
 	storage.DeletePerson(uint(personID))
-	return &bot.Message{Content: "Done"}, nil
+	return bot.NewReplyMessage("Done", replyID), nil
 }
 
-func actionHandler(args []string) (*bot.Message, error) {
+func actionHandler(args []string, replyID string) (*bot.Message, error) {
 	taskID, err := strconv.ParseUint(args[0], 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid task ID: %s: %+v", args[0], err)
@@ -140,5 +141,5 @@ func actionHandler(args []string) (*bot.Message, error) {
 		return nil, err
 	}
 
-	return &bot.Message{Content: "Done"}, nil
+	return bot.NewReplyMessage("Done", replyID), nil
 }

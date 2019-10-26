@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/ccding/go-logging/logging"
@@ -10,6 +11,9 @@ import (
 
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
+
+type Channel chan *Message
+type CommandHandler func(args []string, replyID string) (*Message, error)
 
 var bot struct {
 	ctx         context.Context
@@ -91,6 +95,7 @@ func handleUpdates(update *tgbotapi.Update) {
 	var userName string
 	var userMessage string
 	var telegramChat *tgbotapi.Chat
+	var replyID string
 
 	if update.Message != nil {
 		chatID = update.Message.Chat.ID
@@ -104,8 +109,12 @@ func handleUpdates(update *tgbotapi.Update) {
 		userName = update.CallbackQuery.From.UserName
 		userMessage = update.CallbackQuery.Data
 		telegramChat = update.CallbackQuery.Message.Chat
+		replyID = update.CallbackQuery.ID
 
-		bot.api.AnswerCallbackQuery(tgbotapi.CallbackConfig{CallbackQueryID: update.CallbackQuery.ID})
+		// Некрасиво, но работает
+		if strings.Index(userMessage, "/drop") == 0 {
+			bot.api.DeleteMessage(tgbotapi.DeleteMessageConfig{ChatID:chatID, MessageID:update.CallbackQuery.Message.MessageID})
+		}
 	} else {
 		return
 	}
@@ -121,7 +130,7 @@ func handleUpdates(update *tgbotapi.Update) {
 		bot.trustedChat = newChat(telegramChat)
 	}
 
-	resp := bot.trustedChat.IncomingMessage(userMessage)
+	resp := bot.trustedChat.IncomingMessage(userMessage, replyID)
 	if resp != nil {
 		sendMessage(resp)
 	}
@@ -133,39 +142,24 @@ func shutdown() {
 }
 
 func sendTextMessage(text string) {
-	if bot.trustedChat != nil {
-		msg := tgbotapi.NewMessage(bot.trustedChat.ChatID(), text)
-		msg.ParseMode = "HTML"
-		bot.api.Send(msg)
-	}
+	sendMessage(&Message{Content: text})
 }
 
 func sendMessage(message *Message) {
 	if bot.trustedChat != nil {
-		if message.Photo != "" {
-			photo := tgbotapi.PhotoConfig{}
-			photo.ChatID = bot.trustedChat.ChatID()
-			photo.FileID = message.Photo
-			photo.UseExisting = true
-			photo.Caption = message.PhotoCaption
-			bot.api.Send(photo)
-		}
-
-		msg := tgbotapi.NewMessage(bot.trustedChat.ChatID(), message.Content)
-		msg.ParseMode = "HTML"
-		if message.Actions != nil && len(message.Actions) > 0 {
-			buttons := make([]tgbotapi.InlineKeyboardButton, 0)
-			for _, action := range message.Actions {
-				row := tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData(action.Title, action.Command),
-				)
-
-				buttons = append(buttons, row...)
+		rawMessages := makeRawMessage(bot.trustedChat.ChatID(), message)
+		for _, msg := range rawMessages {
+			if _, err := bot.api.Send(msg); err != nil {
+				bot.log.Errorf("Send message failed: %+v", err)
 			}
-
-			msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons)
 		}
-		bot.api.Send(msg)
+
+		if message.messageType == messageReply && message.replyID != "" {
+			_, err := bot.api.AnswerCallbackQuery(tgbotapi.CallbackConfig{CallbackQueryID: message.replyID, Text: message.Content})
+			if err != nil {
+				bot.log.Errorf("Reply to message failed: %+v", err)
+			}
+		}
 	}
 }
 
