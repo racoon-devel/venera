@@ -13,8 +13,10 @@ import (
 
 type searchSettings struct {
 	types.SearchSettings
-	Tel      string
-	APIToken string
+	Tel       string
+	APIToken  string
+	Latitude  float32
+	Longitude float32
 }
 
 // TinderProvider - provider for searching people in Tinder

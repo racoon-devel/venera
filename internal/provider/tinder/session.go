@@ -192,6 +192,8 @@ func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Reques
 		session.state.Search.AgeTo = search.AgeTo
 		session.state.Search.Likes = search.Likes
 		session.state.Search.Dislikes = search.Dislikes
+		session.state.Search.Longitude = search.Longitude
+		session.state.Search.Latitude = search.Latitude
 
 		return true, nil
 	}
@@ -202,12 +204,20 @@ func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Reques
 		Dislikes string
 		AgeFrom  uint
 		AgeTo    uint
+		Latitude  float32
+		Longitude float32
 	}
 
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
 
-	ctx := editContext{URL: r.URL.String(), AgeFrom: session.state.Search.AgeFrom, AgeTo: session.state.Search.AgeTo}
+	ctx := editContext{URL: r.URL.String(),
+		AgeFrom: session.state.Search.AgeFrom,
+		AgeTo: session.state.Search.AgeTo,
+		Latitude: session.state.Search.Latitude,
+		Longitude:session.state.Search.Longitude,
+	}
+
 	ctx.Likes = listToString(session.state.Search.Likes)
 	ctx.Dislikes = listToString(session.state.Search.Dislikes)
 

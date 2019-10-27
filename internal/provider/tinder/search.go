@@ -17,9 +17,6 @@ import (
 const (
 	maxSuperLikes          uint = 5
 	superlikeRefreshPeriod      = 140 * time.Second
-	// TODO: randomize
-	locationLatitude   float32 = 55.741676
-	locationLongtitude float32 = 37.624928
 
 	delayBatchMin     = 3 * time.Minute
 	delayBatchMax     = 5 * time.Minute
@@ -76,7 +73,7 @@ func (session *tinderSearchSession) setup(ctx context.Context) {
 	session.log.Debugf("tinder: update location...")
 
 	session.repeat(ctx, func() error {
-		return session.api.UpdateLocation(locationLatitude, locationLongtitude)
+		return session.api.UpdateLocation(session.state.Search.Latitude, session.state.Search.Longitude)
 	})
 
 	session.log.Debugf("tinder: update preferences...")
@@ -132,6 +129,13 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 
 		session.log.Info("tinder: processing session finished")
 		utils.Delay(ctx, utils.Range{Min: delaySessionMin, Max: delaySessionMax})
+
+		session.repeat(ctx, func() error {
+			return session.api.UpdateLocation(
+				utils.RandomCoordinate(session.state.Search.Latitude),
+				utils.RandomCoordinate(session.state.Search.Longitude),
+			)
+		})
 	}
 }
 
@@ -145,7 +149,7 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 	})
 
 	if err != nil {
-		session.log.Errorf( "Retrieve persons failed: %+v", err)
+		session.log.Errorf("Retrieve persons failed: %+v", err)
 		session.auth(ctx)
 	}
 
