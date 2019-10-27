@@ -1,11 +1,14 @@
 package dispatcher
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/ccding/go-logging/logging"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -21,6 +24,9 @@ var dispatcher struct {
 	tasks      map[uint]*Task
 	mutex      sync.Mutex
 	httpServer http.Server
+
+	nightMode        bool
+	cancelNightTimer context.CancelFunc
 }
 
 func Initialize(log *logging.Logger) error {
@@ -39,6 +45,8 @@ func Initialize(log *logging.Logger) error {
 	taskRecords := storage.LoadTasks()
 	providers := provider.All()
 
+	dispatcher.nightMode = utils.IsNightNow()
+
 	for _, record := range taskRecords {
 		provider := providers[record.Provider]
 		session := provider.RestoreSearchSession(record.CurrentState)
@@ -47,7 +55,9 @@ func Initialize(log *logging.Logger) error {
 		dispatcher.tasks[task.ID] = task
 		log.Debugf("Task %s:#%d mode: %d", task.Provider, task.ID, task.Mode)
 
-		task.Execute()
+		if !dispatcher.nightMode {
+			task.Execute()
+		}
 	}
 
 	registerBotCommands()
@@ -55,6 +65,44 @@ func Initialize(log *logging.Logger) error {
 	dispatcher.log.Debugf("Dispatcher inited")
 
 	return nil
+}
+
+func checkNightMode(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Hour):
+			handleNightMode()
+		}
+	}
+}
+
+func handleNightMode() {
+	dispatcher.mutex.Lock()
+	defer dispatcher.mutex.Unlock()
+
+	dispatcher.log.Debug("Check night mode")
+
+	isNight := utils.IsNightNow()
+	if isNight && !dispatcher.nightMode {
+		dispatcher.log.Info("Enter to night mode")
+		for _, task := range dispatcher.tasks {
+			task.Shutdown()
+		}
+		dispatcher.nightMode = true
+	}
+
+	if !isNight && dispatcher.nightMode {
+		dispatcher.log.Info("Escape from night mode")
+		for _, task := range dispatcher.tasks {
+			task.Execute()
+		}
+
+		dispatcher.nightMode = false
+	}
 }
 
 func getTaskProvider(taskID uint) types.Provider {
@@ -119,6 +167,10 @@ func taskAction(taskID uint, handler func(task *Task)) error {
 	task, ok := dispatcher.tasks[taskID]
 	if !ok {
 		return fmt.Errorf("Task not found: %d", taskID)
+	}
+
+	if dispatcher.nightMode {
+		return fmt.Errorf("Night mode enabled. Ignore task control action")
 	}
 
 	handler(task)

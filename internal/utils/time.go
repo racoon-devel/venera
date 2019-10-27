@@ -11,6 +11,11 @@ type Range struct {
 	Max time.Duration
 }
 
+const (
+	NightBeginHour = 1
+	NightEndHour = 9
+)
+
 func Delay(ctx context.Context, delay Range) {
 	duration := delay.Min + time.Duration(rand.Int63())%(delay.Max-delay.Min)
 	timer := time.NewTimer(duration)
@@ -22,4 +27,11 @@ func Delay(ctx context.Context, delay Range) {
 	case <-ctx.Done():
 		panic("cancelled")
 	}
+}
+
+
+func IsNightNow() bool {
+	location, _ := time.LoadLocation("Europe/Moscow")
+	now := time.Now().UTC().In(location)
+	return now.Hour() >= NightBeginHour && now.Hour() <= NightEndHour
 }

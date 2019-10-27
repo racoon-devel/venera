@@ -132,7 +132,6 @@ func controlTaskHandler(w http.ResponseWriter, r *http.Request, handler taskItem
 	if err != nil {
 		webui.DisplayError(w, err)
 		return
-
 	}
 
 	err = handler(uint(id))
@@ -221,7 +220,6 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 
 // Run start HTTP server
 func RunServer(logger *logging.Logger, wg *sync.WaitGroup) {
-
 	router := InstanceRouter(logger)
 
 	ip := utils.Configuration.Http.Ip
@@ -237,11 +235,18 @@ func RunServer(logger *logging.Logger, wg *sync.WaitGroup) {
 		defer wg.Done()
 		log.Fatal(dispatcher.httpServer.ListenAndServe())
 	}()
+
+	var ctx context.Context
+	ctx, dispatcher.cancelNightTimer = context.WithCancel(context.Background())
+	wg.Add(1)
+	go checkNightMode(ctx, wg)
 }
 
 func Stop() {
 	dispatcher.log.Info("HTTP Server shutdowning...")
 	dispatcher.httpServer.Shutdown(context.Background())
+
+	dispatcher.cancelNightTimer()
 
 	dispatcher.mutex.Lock()
 	defer dispatcher.mutex.Unlock()
