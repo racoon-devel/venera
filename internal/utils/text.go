@@ -65,10 +65,16 @@ func (self *TextProcessor) Process(text string) (positiveMatches []TextMatch, ne
 func (self *TextProcessor) process(text string, exprs []*regexp.Regexp) []TextMatch {
 	result := make([]TextMatch, 0)
 	for _, expr := range exprs {
-		matches := expr.FindAllStringIndex(text, -1)
+		matches := expr.FindAllStringSubmatchIndex(" " + text + " ", -1)
 		for _, match := range matches {
-			result = append(result, TextMatch{Begin: match[0], End: match[1]})
-			self.log.Debugf("mactched '%s' of '%s'", text[match[0]:match[1]], expr.String())
+			begin := match[2]-1
+			end := match[3]-1
+			if begin == end {
+				continue
+			}
+
+			result = append(result, TextMatch{Begin: begin, End: end})
+			self.log.Debugf("mactched '%s' of '%s'", text[begin:end], expr.String())
 		}
 	}
 
@@ -109,9 +115,20 @@ func validate(pattern string) error {
 }
 
 func compile(keyword string) (*regexp.Regexp, error) {
-	expr := `\B` + keyword
+	var expr string
+
+	expr += `\P{L}`
+
+
+	expr += "(" + keyword
 	expr = strings.ReplaceAll(expr, "*", `[\p{L}]*`)
 	expr = strings.ReplaceAll(expr, " ", `[\s]+`)
+	expr += `)`
+
+	if keyword[len(keyword)-1] != '*' {
+		expr += `\P{L}`
+	}
+
 	return regexp.Compile(expr)
 }
 

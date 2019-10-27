@@ -84,6 +84,68 @@ var (
 			},
 			mustFail: true,
 		},
+		{
+			positive: []string{
+				"ум",
+			},
+			text:   "Системы умного дома",
+			output: "Системы умного дома",
+		},
+		{
+			positive: []string{
+				"*ум",
+			},
+			text:   "Системы умного безумного дома",
+			output: "Системы умного безумного дома",
+		},
+		{
+			positive: []string{
+				"*ум*",
+			},
+			positiveMatches:[]string{
+				"умного",
+				"безумного",
+			},
+			text:   "Системы умного безумного дома",
+			output: "Системы <b>умного</b> <b>безумного</b> дома",
+		},
+		{
+			positive: []string{
+				"ум*",
+			},
+			positiveMatches: []string {
+				"умного",
+			},
+			text:   "Системы умного безумного дома",
+			output: "Системы <b>умного</b> безумного дома",
+		},
+		{
+			positive: []string{
+				"*ум",
+			},
+			positiveMatches:[]string{
+				"неум",
+			},
+			text:   "Системы умного безумного неум дома",
+			output: "Системы умного безумного <b>неум</b> дома",
+		},
+		{
+			positive: []string{
+				"*умн* дом*",
+			},
+			positiveMatches:[]string{
+				"безумный дом",
+			},
+			text:   "Это безумный дом",
+			output: "Это <b>безумный дом</b>",
+		},
+		{
+			positive: []string{
+				"*умн* дом*",
+			},
+			text:   "Это безумный недом",
+			output: "Это безумный недом",
+		},
 	}
 
 	highlightTestCases = []highlightTestCase{
