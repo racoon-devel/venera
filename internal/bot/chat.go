@@ -13,8 +13,8 @@ const (
 )
 
 type chat struct {
-	chat *tgbotapi.Chat
-	state int
+	chat    *tgbotapi.Chat
+	state   int
 	request *requestData
 }
 
@@ -27,10 +27,15 @@ func (self *chat) IncomingMessage(message string, replyID string) *Message {
 	defer cmdMutex.Unlock()
 
 	if self.state == stateRequesting {
-		self.request.responseChannel <- message
-		self.request = nil
-		self.state = stateMessaging
-		return nil
+		select {
+		case <-self.request.ctx.Done():
+			self.state = stateMessaging
+			self.request = nil
+		case self.request.responseChannel <- message:
+			self.state = stateMessaging
+			self.request = nil
+			return nil
+		}
 	}
 
 	args := strings.Split(message, " ")
@@ -63,11 +68,7 @@ func (self *chat) ChatID() int64 {
 	return self.chat.ID
 }
 
-func(self *chat) Request(request *requestData) {
-	if self.state == stateRequesting {
-		// хуй знает, что делать
-	}
-
+func (self *chat) Request(request *requestData) {
 	self.state = stateRequesting
 	self.request = request
 }

@@ -52,6 +52,8 @@ func makeRawMessage(chatID int64, message *Message) []tgbotapi.Chattable {
 		return makeSingleMessage(chatID, message)
 	case messageMenu:
 		return makeMenuMessage(chatID, message)
+	case messageRequest:
+		return makeSingleMessage(chatID, message)
 	case messageReply:
 		if (message.replyID == "") {
 			return makeSingleMessage(chatID, message)

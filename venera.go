@@ -4,12 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/ccding/go-logging/logging"
 	"os"
 	"os/signal"
 	"runtime"
 	"sync"
-
-	"github.com/ccding/go-logging/logging"
 
 	"racoondev.tk/gitea/racoon/venera/internal/bot"
 	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"

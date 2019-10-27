@@ -7,13 +7,12 @@ import (
 )
 
 type Range struct {
-	MinMs uint32
-	MaxMs uint32
+	Min time.Duration
+	Max time.Duration
 }
 
 func Delay(ctx context.Context, delay Range) {
-	realDelay := delay.MinMs + rand.Uint32()%(delay.MaxMs-delay.MinMs)
-	duration := time.Duration(realDelay) * time.Millisecond
+	duration := delay.Min + time.Duration(rand.Int63())%(delay.Max-delay.Min)
 	timer := time.NewTimer(duration)
 	defer timer.Stop()
 

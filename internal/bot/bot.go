@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ccding/go-logging/logging"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -34,6 +35,10 @@ var (
 	cmdMutex       sync.Mutex
 	commandSet     = make(map[string]botCommand, 0)
 	defaultCommand *botCommand
+)
+
+const (
+	requestTimeout = 1 * time.Minute
 )
 
 func Initialize(ctx context.Context, logger *logging.Logger, wg *sync.WaitGroup,
@@ -71,16 +76,16 @@ func Post(msg *Message) {
 }
 
 func Request(ctx context.Context, text string) (string, error) {
+	timeouted, _ := context.WithTimeout(ctx, requestTimeout)
 	responseChannel := make(chan string)
-	bot.messageChan <- newRequestMessage(ctx, text, responseChannel)
+	bot.messageChan <- newRequestMessage(timeouted, text, responseChannel)
 
-	for {
-		select {
-		case <-ctx.Done():
-			return "", ctx.Err()
-		case response := <-responseChannel:
-			return response, nil
-		}
+
+	select {
+	case <-timeouted.Done():
+		return "", timeouted.Err()
+	case response := <-responseChannel:
+		return response, nil
 	}
 }
 

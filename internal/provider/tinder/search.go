@@ -21,47 +21,57 @@ const (
 	locationLatitude   float32 = 55.741676
 	locationLongtitude float32 = 37.624928
 
-	delayBatchMinMs   uint32 = 3.0 * 60 * 1000
-	delayBatchMaxMs   uint32 = 5.0 * 60 * 1000
-	requestPerSession        = 3
+	delayBatchMin     = 3 * time.Minute
+	delayBatchMax     = 5 * time.Minute
+	requestPerSession = 3
 
-	delaySessionMinMs uint32 = 1.0 * 60 * 60 * 1000
-	delaySessionMaxMs uint32 = 3.0 * 60 * 60 * 1000
+	delaySessionMin = 1 * time.Hour
+	delaySessionMax = 3 * time.Hour
 )
 
 func (session *tinderSearchSession) auth(ctx context.Context) error {
-	session.mutex.Lock()
-	defer session.mutex.Unlock()
+	for {
+		auth := newTinderAuth(session.state.Search.Tel)
+		if err := auth.RequestCode(); err != nil {
+			return err
+		}
 
-	auth := newTinderAuth(session.state.Search.Tel)
-	if err := auth.RequestCode(); err != nil {
-		return err
+		code, err := bot.Request(ctx, "Require Tinder authentification token")
+		if err != nil {
+			utils.Delay(ctx, utils.Range{Min: delayBatchMin, Max: delayBatchMax})
+			continue
+		}
+
+		auth.LoginCode = code
+		if err := auth.RequestToken(); err != nil {
+			session.raise(err)
+			utils.Delay(ctx, utils.Range{Min: delayBatchMin, Max: delayBatchMax})
+			continue
+		}
+
+		session.log.Infof("Tinder API token retrieved: %s", auth.APIToken)
+
+		session.mutex.Lock()
+		session.state.Search.APIToken = auth.APIToken
+		session.api.SetAPIToken(auth.APIToken)
+		session.mutex.Unlock()
+
+		return nil
 	}
-
-	code, err := bot.Request(ctx, "Require Tinder authentification token")
-	if err != nil {
-		return err
-	}
-
-	auth.LoginCode = code
-	if err := auth.RequestToken(); err != nil {
-		return err
-	}
-
-	session.log.Infof("Tinder API token retrieved: %s", auth.APIToken)
-
-	session.state.Search.APIToken = auth.APIToken
-	return nil
 }
 
 func (session *tinderSearchSession) setup(ctx context.Context) {
-	session.log.Debugf("tinder: authentification...")
+	session.log.Debugf("tinder: check auth")
 
-	if session.state.LastSuperlikeUpd.IsZero() {
-		session.state.LastSuperlikeUpd = time.Now()
+	profile, err := session.api.Profile()
+	if err != nil || profile.ID == "" {
+		if err := session.auth(ctx); err != nil {
+			session.raise(err)
+			return
+		}
 	}
 
-	session.api.SetAPIToken(session.state.Search.APIToken)
+	session.log.Info(profile)
 
 	session.log.Debugf("tinder: update location...")
 
@@ -71,14 +81,14 @@ func (session *tinderSearchSession) setup(ctx context.Context) {
 
 	session.log.Debugf("tinder: update preferences...")
 
+	session.mutex.Lock()
 	pref := tindergo.SearchPreferences{
 		AgeFilterMin:   int(session.state.Search.AgeFrom),
 		AgeFilterMax:   int(session.state.Search.AgeTo),
 		DistanceFilter: 10,
 		GenderFilter:   1,
 	}
-
-	session.log.Debug(pref.AgeFilterMin, pref.AgeFilterMax)
+	session.mutex.Unlock()
 
 	session.repeat(ctx, func() error {
 		return session.api.UpdateSearchPreferences(pref)
@@ -92,6 +102,8 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 	session.status = types.StatusRunning
 
 	session.api = tindergo.New()
+	session.api.SetAPIToken(session.state.Search.APIToken)
+
 	session.rater = &tinderRater{}
 	session.rater.Init(session.log, &session.state.Search.SearchSettings)
 
@@ -103,30 +115,39 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 		session.state.Matches = make(map[string]types.Person)
 	}
 
-	session.setup(ctx)
+	if session.state.LastSuperlikeUpd.IsZero() {
+		session.state.LastSuperlikeUpd = time.Now()
+	}
 
 	session.mutex.Unlock()
+
+	session.setup(ctx)
 
 	for {
 		for i := 0; i < requestPerSession; i++ {
 			session.processBatch(ctx)
 			session.log.Info("tinder: processing batch finished")
-			utils.Delay(ctx, utils.Range{MinMs: delayBatchMinMs, MaxMs: delayBatchMaxMs})
+			utils.Delay(ctx, utils.Range{Min: delayBatchMin, Max: delayBatchMax})
 		}
 
 		session.log.Info("tinder: processing session finished")
-		utils.Delay(ctx, utils.Range{MinMs: delaySessionMinMs, MaxMs: delaySessionMaxMs})
+		utils.Delay(ctx, utils.Range{Min: delaySessionMin, Max: delaySessionMax})
 	}
 }
 
 func (session *tinderSearchSession) processBatch(ctx context.Context) {
 
 	var persons []tindergo.RecsCoreUser
-	session.repeat(ctx, func() error {
+	err := session.repeat(ctx, func() error {
 		var err error
 		persons, err = session.api.RecsCore()
 		return err
 	})
+
+	if err != nil {
+		session.log.Errorf( "Retrieve persons failed: %+v", err)
+		session.auth(ctx)
+	}
 
 	session.log.Debugf("tinder: got %d persons", len(persons))
 
