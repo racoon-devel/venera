@@ -25,8 +25,8 @@ const (
 	ModeIdle = iota
 	ModeActive
 
-	pollingIntervalSec uint64 = 20
-	statIntervalSec    uint64 = 50
+	pollingIntervalMin uint64 = 10
+	statIntervalHours  uint64 = 2
 )
 
 type Task struct {
@@ -81,8 +81,8 @@ func (task *Task) start() {
 		task.session.Process(ctx, task.ID)
 	}()
 
-	task.sched.Every(pollingIntervalSec).Seconds().Do(task.poll)
-	task.sched.Every(statIntervalSec).Seconds().Do(task.SendStat)
+	task.sched.Every(pollingIntervalMin).Minutes().Do(task.poll)
+	task.sched.Every(statIntervalHours).Hours().Do(task.SendStat)
 
 	task.schedDone = task.sched.Start()
 	go func() {

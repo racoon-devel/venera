@@ -3,24 +3,25 @@ package tinder
 import (
 	"context"
 	"math/rand"
-	"racoondev.tk/gitea/racoon/venera/internal/bot"
 	"sync/atomic"
 	"time"
 
+	"racoondev.tk/gitea/racoon/venera/internal/bot"
+
 	"racoondev.tk/gitea/racoon/venera/internal/storage"
 
-	"racoondev.tk/gitea/racoon/venera/tindergo"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"racoondev.tk/gitea/racoon/venera/tindergo"
 )
 
 const (
 	maxSuperLikes          uint = 5
-	superlikeRefreshPeriod      = 140 * time.Second
+	superlikeRefreshPeriod      = 24 * time.Hour
 
 	delayBatchMin     = 3 * time.Minute
 	delayBatchMax     = 5 * time.Minute
-	requestPerSession = 3
+	requestPerSession = 5
 
 	delaySessionMin = 1 * time.Hour
 	delaySessionMax = 3 * time.Hour

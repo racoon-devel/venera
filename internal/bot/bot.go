@@ -38,7 +38,7 @@ var (
 )
 
 const (
-	requestTimeout = 1 * time.Minute
+	requestTimeout = 10 * time.Minute
 )
 
 func Initialize(ctx context.Context, logger *logging.Logger, wg *sync.WaitGroup,

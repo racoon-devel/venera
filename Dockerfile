@@ -8,10 +8,11 @@ COPY configs/venera.conf venera.conf
 EXPOSE 80/tcp
 
 # Storage
-VOLUME ["/var/lib/venera"]
+WORKDIR "/var/lib/venera"
+COPY . content
 
 # Build venera
-WORKDIR /go/src/github.com/nightwizard0/venera
+WORKDIR /go/src/racoondev.tk/gitea/racoon/venera
 COPY . .
 ENV GOBIN=/go/bin
 RUN go install -v ./venera.go && rm -rf *

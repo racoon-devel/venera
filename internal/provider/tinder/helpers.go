@@ -12,7 +12,7 @@ import (
 
 const (
 	minDelay    = 600 * time.Millisecond
-	maxDelay    = 5300 * time.Millisecond
+	maxDelay    = 9300 * time.Millisecond
 	maxAttempts = 5
 )
 
