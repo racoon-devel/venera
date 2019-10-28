@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jasonlvhit/gocron"
+
 	"racoondev.tk/gitea/racoon/venera/internal/bot"
 
 	"github.com/ccding/go-logging/logging"
@@ -23,18 +25,18 @@ const (
 	ModeIdle = iota
 	ModeActive
 
-	pollingInterval time.Duration = 20 * time.Second
-	statInterval    time.Duration = 50 * time.Second
+	pollingIntervalSec uint64 = 20
+	statIntervalSec    uint64 = 50
 )
 
 type Task struct {
 	types.TaskRecord
-	session      types.SearchSession
-	wg           sync.WaitGroup
-	cancel       context.CancelFunc
-	log          *logging.Logger
-	timer        *time.Ticker
-	lastStatTime time.Time
+	session   types.SearchSession
+	wg        sync.WaitGroup
+	cancel    context.CancelFunc
+	log       *logging.Logger
+	sched     *gocron.Scheduler
+	schedDone chan bool
 }
 
 type TaskInfo struct {
@@ -48,6 +50,7 @@ type TaskInfo struct {
 func newTask(session types.SearchSession, record *types.TaskRecord) *Task {
 	task := &Task{session: session, log: dispatcher.log}
 	task.TaskRecord = *record
+	task.sched = gocron.NewScheduler()
 	return task
 }
 
@@ -78,23 +81,15 @@ func (task *Task) start() {
 		task.session.Process(ctx, task.ID)
 	}()
 
-	task.timer = time.NewTicker(pollingInterval)
-	task.lastStatTime = time.Now()
-	timerCtx, _ := context.WithCancel(ctx)
+	task.sched.Every(pollingIntervalSec).Seconds().Do(task.poll)
+	task.sched.Every(statIntervalSec).Seconds().Do(task.SendStat)
 
-	go func(ctx context.Context) {
+	task.schedDone = task.sched.Start()
+	go func() {
 		defer task.wg.Done()
-		for {
-			select {
-			case <-task.timer.C:
-				task.poll()
-
-			case <-ctx.Done():
-				task.timer.Stop()
-				return
-			}
-		}
-	}(timerCtx)
+		<-ctx.Done()
+		task.schedDone <- true
+	}()
 }
 
 func (task *Task) Run() {
@@ -138,15 +133,10 @@ func (task *Task) poll() {
 	storage.UpdateTask(&task.TaskRecord)
 	task.session.Poll()
 
-	if now := time.Now(); now.Sub(task.lastStatTime) >= statInterval {
-		task.lastStatTime = now
-		task.SendStat()
-	}
-
 	if err := task.session.GetLastError(); err != nil {
-		msg := bot.Message{ Content: fmt.Sprintf("Task #%d [ %s ] raised error: %+v",
+		msg := bot.Message{Content: fmt.Sprintf("Task #%d [ %s ] raised error: %+v",
 			task.ID, task.Provider, err)}
-		bot.Post( &msg )
+		bot.Post(&msg)
 	}
 }
 
