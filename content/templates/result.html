@@ -1,0 +1,19 @@
+{{ define "result" }}
+{{ template "header" 1 }}
+<table>
+    <col width ="50%">   
+    <col width ="50%">   
+    {{ template "item" $ }}
+    {{range $i, $foto := $.Person.Photo }}
+    {{ $m := mod2 $i}}
+    {{ if eq $m 0 }}
+    <tr>
+    {{ end }}
+    <td valign="top"><a href="{{$foto}}"><img width="95%" src="{{$foto}}"></a></td>
+    {{ if eq $m 1 }}
+    </tr>
+    {{ end }}
+    {{- end }}
+</table>
+{{ template "footer" }}
+{{ end }}

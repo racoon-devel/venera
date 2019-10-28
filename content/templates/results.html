@@ -1,0 +1,70 @@
+{{ define "results" }}
+{{ template "header" 1 }}
+<form action="/results" method="GET">
+    <table>
+        <td>Task: 
+            <select name="task">
+                <option value="">All</option>
+                {{range $i, $task := $.Tasks}}
+                <option value="{{ $task.ID }}" {{ if eq $.TaskFilter $task.ID }} selected {{ end }} >Task #{{ $task.ID }} [ {{ $task.Provider }} ]</option>
+                {{- end}}
+            </select>
+        </td>
+        <td>Ordering:
+            <select name="order">
+                <option value="desc" {{ if eq $.Ascending false }} selected {{ end }}>Descending</option>
+                <option value="asc" {{ if eq $.Ascending true }} selected {{ end }}>Ascending</option>
+            </select>
+        </td>
+        <td>View mode:
+                <select name="mode">
+                    <option value="0" {{ if eq $.ViewMode 0 }} selected {{ end }}>List</option>
+                    <option value="1" {{ if eq $.ViewMode 1 }} selected {{ end }}>Album</option>
+                </select>
+            </td>
+        <td>
+            Page:
+            <select name="page">
+                    {{range $i, $n := $.Pages }}
+                    <option value="{{ $n }}" {{ if eq $.Page $n }} selected {{ end }}>{{ $n }}</option>
+                    {{- end}}
+            </select>
+        </td>
+        <td>
+            Favourite:
+            <input type="checkbox" name="favourite" {{ if eq $.Favourite true }} checked {{ end }}>
+        </td>
+        <td>
+            Rating:
+            <input type="text" name="rating" value="{{ $.Rating }}" size="2">
+        </td>
+        <td valign="bottom">
+            <button type="submit">Filter</button>
+        </td>
+    </table>
+</form>
+<p><b>Total:</b>{{ $.Total }}</p>
+<table>
+<col width ="50%">   
+<col width ="50%">   
+{{range $i, $res := $.Results }}
+{{ if eq $.ViewMode 1 }}
+{{ $m := mod2 $i }}
+{{ if eq $m 0 }}
+<tr>
+{{ end }}
+<td valign="top">
+    <a href="/result/{{$res.ID}}"><img width="95%"  src="{{ index $res.Person.Photo 0 }}"></a>
+</td>
+{{ if eq $m 1 }}
+</tr>
+{{ end }}
+{{ else }}
+{{ template "item" $res }}
+{{ end }}
+{{- end}}
+</table>
+<p align="right"><a class="button" 
+    href="/results?mode={{$.ViewMode}}&page={{inc $.Page}}&order={{ if eq $.Ascending false }}desc{{ else }}asc{{end}}&task={{$.TaskFilter}}">NEXT</a></p>
+{{ template "footer" }}
+{{ end }}

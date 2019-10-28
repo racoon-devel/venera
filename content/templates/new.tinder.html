@@ -1,0 +1,64 @@
+{{ define "new.tinder" }}
+    {{ template "header" 2 }}
+    <script>
+        function GetCode() {
+            var inputs = document.getElementById("task-form").elements;
+            var xmlHttp = new XMLHttpRequest();
+            var tel = inputs["tel"].value
+            xmlHttp.open("GET", encodeURI("/tinder/login?tel=" + tel), true);
+            xmlHttp.send();
+            xmlHttp.onreadystatechange = processRequest;
+
+            function processRequest() {
+                if (xmlHttp.readyState == 4) {
+                    if (xmlHttp.status == 200) {
+                        inputs["code"].hidden = false
+                        var resp = JSON.parse(xmlHttp.responseText);
+                        inputs["login_token"].value = resp["login_token"]
+                    }
+                }
+            }
+        }
+
+    </script>
+    <form action="/task/new/tinder" method="POST" id="task-form">
+        <table>
+            <tr>
+                <td>Tel Number</td>
+                <td><input type="text" name="tel"></td>
+            </tr>
+            <tr>
+                <td>Code:</td>
+                <td><input type="text" name="code" hidden="true"></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <button type="button" name="getcode" onclick="GetCode();">Get Code to phone</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Age</td>
+                <td><input type="text" name="ageFrom"> - <input type="text" name="ageTo"></td>
+            </tr>
+            <tr>
+                <td>Latitude</td>
+                <td><input type="text" name="latitude" value="55.741676"></td>
+            </tr>
+            <tr>
+                <td>Longitude</td>
+                <td><input type="text" name="longitude" value="37.624928"></td>
+            </tr>
+            <tr>
+                <td colspan="2"> Likes<textarea name="likes" rows="5" cols="100"></textarea></td>
+            </tr>
+            <tr>
+                <td colspan="2"> Dislikes<textarea name="dislikes" rows="5" cols="100"></textarea></td>
+            </tr>
+            <tr>
+                <td colspan="2"><input type="submit" value="Submit"></td>
+            </tr>
+        </table>
+        <input type="hidden" name="login_token" value="">
+    </form>
+    {{ template "footer" }}
+{{ end }}
