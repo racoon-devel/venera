@@ -17,9 +17,9 @@ import (
 
 	"github.com/ccding/go-logging/logging"
 
-	"racoondev.tk/gitea/racoon/tindergo"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/webui"
+	"racoondev.tk/gitea/racoon/venera/tindergo"
 )
 
 type tinderStat struct {
@@ -35,7 +35,7 @@ type tinderSessionState struct {
 	Top              []ListItem
 	Stat             tinderStat
 	LastSuperlikeUpd time.Time
-	Matches map[string]types.Person
+	Matches          map[string]types.Person
 }
 
 type tinderSearchSession struct {
@@ -156,11 +156,10 @@ func (session *tinderSearchSession) Poll() {
 					match.IsSuperLike, match.IsBoostMatch)
 				person := convertMatch(&match)
 				session.state.Matches[match.ID] = person
-				session.postMatchPerson( match.ID, &person)
+				session.postMatchPerson(match.ID, &person)
 			}
 		}
 	}
-
 
 }
 
@@ -199,11 +198,11 @@ func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Reques
 	}
 
 	type editContext struct {
-		URL      string
-		Likes    string
-		Dislikes string
-		AgeFrom  uint
-		AgeTo    uint
+		URL       string
+		Likes     string
+		Dislikes  string
+		AgeFrom   uint
+		AgeTo     uint
 		Latitude  float32
 		Longitude float32
 	}
@@ -212,10 +211,10 @@ func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Reques
 	defer session.mutex.Unlock()
 
 	ctx := editContext{URL: r.URL.String(),
-		AgeFrom: session.state.Search.AgeFrom,
-		AgeTo: session.state.Search.AgeTo,
-		Latitude: session.state.Search.Latitude,
-		Longitude:session.state.Search.Longitude,
+		AgeFrom:   session.state.Search.AgeFrom,
+		AgeTo:     session.state.Search.AgeTo,
+		Latitude:  session.state.Search.Latitude,
+		Longitude: session.state.Search.Longitude,
 	}
 
 	ctx.Likes = listToString(session.state.Search.Likes)
@@ -330,7 +329,7 @@ func (session *tinderSearchSession) postPerson(person *types.PersonRecord) {
 	bot.Post(&msg)
 }
 
-func (session *tinderSearchSession) postMatchPerson( matchID string, person *types.Person) {
+func (session *tinderSearchSession) postMatchPerson(matchID string, person *types.Person) {
 	msg := bot.Message{}
 	msg.Content = webui.DecorPerson(person)
 
@@ -340,7 +339,7 @@ func (session *tinderSearchSession) postMatchPerson( matchID string, person *typ
 	}
 
 	msg.Actions = []types.Action{
-		types.Action{Title: "Unmatch",	Command: fmt.Sprintf("/action %d unmatch id %s",
+		types.Action{Title: "Unmatch", Command: fmt.Sprintf("/action %d unmatch id %s",
 			session.taskID, matchID)},
 	}
 

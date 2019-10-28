@@ -9,7 +9,7 @@ import (
 
 	"racoondev.tk/gitea/racoon/venera/internal/storage"
 
-	"racoondev.tk/gitea/racoon/tindergo"
+	"racoondev.tk/gitea/racoon/venera/tindergo"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
