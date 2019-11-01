@@ -5,6 +5,7 @@ import (
 
 	"github.com/ccding/go-logging/logging"
 
+	"racoondev.tk/gitea/racoon/venera/internal/provider/mamba"
 	"racoondev.tk/gitea/racoon/venera/internal/provider/tinder"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
@@ -12,6 +13,7 @@ import (
 var (
 	providers = map[string]types.Provider{
 		"tinder": new(tinder.TinderProvider),
+		"mamba":  new(mamba.MambaProvider),
 	}
 )
 
