@@ -13,7 +13,8 @@ import (
 
 type searchSettings struct {
 	types.SearchSettings
-	City string
+	City   string
+	CityID int
 }
 
 type MambaProvider struct {
@@ -43,6 +44,12 @@ func (provider MambaProvider) CreateSearchSession(r *http.Request) (types.Search
 	}
 
 	if err := settings.SearchSettings.Validate(); err != nil {
+		return nil, err
+	}
+
+	m := newMambaRequester(mambaAppID, mambaSecretKey)
+	settings.CityID, err = m.GetCityID(settings.City)
+	if err != nil {
 		return nil, err
 	}
 

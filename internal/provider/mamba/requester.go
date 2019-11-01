@@ -206,7 +206,6 @@ func (m *mambaRequester) GetPhotos(oid int) ([]string, error) {
 			if err := m.request("photos.get", methodArgs{"oid": strconv.Itoa(oid), "album_id": strconv.Itoa(album)}, &nextPhotos); err == nil {
 				for _, p := range nextPhotos.Photos {
 					result = append(result, p.Photo)
-					fmt.Println(p.Photo)
 				}
 			}
 		}

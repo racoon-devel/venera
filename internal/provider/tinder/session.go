@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 
 	"racoondev.tk/gitea/racoon/venera/internal/storage"
 
@@ -163,19 +164,6 @@ func (session *tinderSearchSession) Poll() {
 
 }
 
-func listToString(list []string) string {
-	var result string
-	for _, item := range list {
-		result += item + ","
-	}
-
-	if len(result) != 0 {
-		result = strings.TrimSuffix(result, result[len(result)-1:])
-	}
-
-	return result
-}
-
 func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Request) (bool, error) {
 	if r.Method == "POST" {
 
@@ -217,8 +205,8 @@ func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Reques
 		Longitude: session.state.Search.Longitude,
 	}
 
-	ctx.Likes = listToString(session.state.Search.Likes)
-	ctx.Dislikes = listToString(session.state.Search.Dislikes)
+	ctx.Likes = utils.ListToString(session.state.Search.Likes)
+	ctx.Dislikes = utils.ListToString(session.state.Search.Dislikes)
 
 	session.log.Debugf("Display edit page")
 

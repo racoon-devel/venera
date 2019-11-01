@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"sync/atomic"
+
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 
 	"github.com/ccding/go-logging/logging"
 
@@ -18,13 +19,15 @@ import (
 
 type mambaStat struct {
 	Retrieved uint32
+	Liked     uint32
+	Disliked  uint32
 	Errors    uint32
 }
 
 type mambaSessionState struct {
 	Search searchSettings
 	Stat   mambaStat
-	Offset uint
+	Offset int
 }
 
 type mambaSearchSession struct {
@@ -65,6 +68,8 @@ func (session *mambaSearchSession) Reset() {
 
 	atomic.StoreUint32(&session.state.Stat.Errors, 0)
 	atomic.StoreUint32(&session.state.Stat.Retrieved, 0)
+	atomic.StoreUint32(&session.state.Stat.Liked, 0)
+	atomic.StoreUint32(&session.state.Stat.Disliked, 0)
 	session.state.Offset = 0
 }
 
@@ -100,19 +105,6 @@ func (session *mambaSearchSession) Process(ctx context.Context, taskID uint) {
 func (session *mambaSearchSession) Poll() {
 }
 
-func listToString(list []string) string {
-	var result string
-	for _, item := range list {
-		result += item + ","
-	}
-
-	if len(result) != 0 {
-		result = strings.TrimSuffix(result, result[len(result)-1:])
-	}
-
-	return result
-}
-
 func (session *mambaSearchSession) Update(w http.ResponseWriter, r *http.Request) (bool, error) {
 	if r.Method == "POST" {
 
@@ -129,6 +121,7 @@ func (session *mambaSearchSession) Update(w http.ResponseWriter, r *http.Request
 		session.state.Search.Likes = search.Likes
 		session.state.Search.Dislikes = search.Dislikes
 		session.state.Search.City = search.City
+		session.state.Offset = 0
 
 		return true, nil
 	}
@@ -151,8 +144,8 @@ func (session *mambaSearchSession) Update(w http.ResponseWriter, r *http.Request
 		City:    session.state.Search.City,
 	}
 
-	ctx.Likes = listToString(session.state.Search.Likes)
-	ctx.Dislikes = listToString(session.state.Search.Dislikes)
+	ctx.Likes = utils.ListToString(session.state.Search.Likes)
+	ctx.Dislikes = utils.ListToString(session.state.Search.Dislikes)
 
 	session.log.Debugf("Display edit page")
 
@@ -174,7 +167,7 @@ func (session *mambaSearchSession) Action(action string, params url.Values) erro
 		return session.open(ID)
 
 	default:
-		return fmt.Errorf("tinder: undefined action: '%s'", action)
+		return fmt.Errorf("mamba: undefined action: '%s'", action)
 	}
 }
 
@@ -182,10 +175,13 @@ func (session *mambaSearchSession) GetStat() map[string]uint32 {
 	stat := make(map[string]uint32)
 	stat["Retrieved"] = atomic.SwapUint32(&session.state.Stat.Retrieved, 0)
 	stat["Errors"] = atomic.SwapUint32(&session.state.Stat.Errors, 0)
+	stat["Liked"] = atomic.SwapUint32(&session.state.Stat.Liked, 0)
+	stat["Disliked"] = atomic.SwapUint32(&session.state.Stat.Disliked, 0)
 
 	return stat
 }
 
 func (session *mambaSearchSession) open(ID string) error {
+	// TODO
 	return nil
 }
