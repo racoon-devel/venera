@@ -10,6 +10,7 @@ import (
 
 	"racoondev.tk/gitea/racoon/venera/internal/storage"
 
+	"racoondev.tk/gitea/racoon/venera/internal/rater"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"racoondev.tk/gitea/racoon/venera/tindergo"
@@ -102,8 +103,7 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 	session.api = tindergo.New()
 	session.api.SetAPIToken(session.state.Search.APIToken)
 
-	session.rater = &tinderRater{}
-	session.rater.Init(session.log, &session.state.Search.SearchSettings)
+	session.rater = rater.NewRater("default", session.log, &session.state.Search.SearchSettings)
 
 	if session.top == nil {
 		session.top = newTopList(maxSuperLikes)

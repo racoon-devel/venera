@@ -50,7 +50,7 @@ type tinderSearchSession struct {
 	taskID   uint
 	api      *tindergo.TinderGo
 	log      *logging.Logger
-	rater    *tinderRater
+	rater    types.Rater
 	top      *topList
 }
 

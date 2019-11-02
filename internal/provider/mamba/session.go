@@ -41,6 +41,7 @@ type mambaSearchSession struct {
 	taskID   uint
 	api      *mambaRequester
 	log      *logging.Logger
+	rater    types.Rater
 }
 
 func (session *mambaSearchSession) SaveState() string {

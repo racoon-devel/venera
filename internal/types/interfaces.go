@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/ccding/go-logging/logging"
 	"github.com/gorilla/mux"
@@ -48,6 +49,7 @@ type Provider interface {
 }
 
 type Rater interface {
-	Init(settings *SearchSettings)
-	Rate(person *Person)
+	Init(log *logging.Logger, settings *SearchSettings)
+	Rate(person *Person) int
+	IsRelevant(visitDate time.Time) bool
 }
