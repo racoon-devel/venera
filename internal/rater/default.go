@@ -1,22 +1,35 @@
 package rater
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ccding/go-logging/logging"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
+
+	"github.com/BurntSushi/toml"
 )
 
-const (
-	minBioLength = 40
-	relevantDays = 30
-)
+type defaultConfig struct {
+	MinBioLength int
+	RelevantDays int
+
+	VIPAccountWeight int
+	BioMatchWeight   int
+	BioPresentWight  int
+
+	AlcoFactor  int
+	SmokeFactor int
+	BodyFactor  int
+}
 
 type defaultRater struct {
-	settings  *types.SearchSettings
-	processor *utils.TextProcessor
-	detector  *utils.FaceDetector
+	configName string
+	settings   *types.SearchSettings
+	processor  *utils.TextProcessor
+	detector   *utils.FaceDetector
+	config     defaultConfig
 }
 
 func (r *defaultRater) Init(log *logging.Logger, settings *types.SearchSettings) {
@@ -31,6 +44,14 @@ func (r *defaultRater) Init(log *logging.Logger, settings *types.SearchSettings)
 	if err != nil {
 		panic(err)
 	}
+
+	path := fmt.Sprintf("%s/configurations/default.%s.conf", utils.Configuration.Other.Content, r.configName)
+	_, err = toml.DecodeFile(path, &r.config)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Debugf("Rater configuration [ default ] : %+v", r.config)
 }
 
 func (r *defaultRater) hasPhoto(photos []string) bool {
@@ -51,29 +72,41 @@ func (r *defaultRater) hasPhoto(photos []string) bool {
 func (r *defaultRater) Rate(person *types.Person) int {
 	var rating int
 
-	if person.Photo == nil || len(person.Photo) == 0 {
-		return -1
+	if person.Photo == nil || len(person.Photo) == 0 || person.Body == types.Fat {
+		person.Rating = IgnorePerson
+		return person.Rating
 	}
 
 	if !r.hasPhoto(person.Photo) {
-		return -1
+		person.Rating = IgnorePerson
+		return person.Rating
 	}
 
-	if len(person.Bio) > minBioLength {
-		rating++
+	if len(person.Bio) > r.config.MinBioLength {
+		rating += r.config.BioPresentWight
 
 		matches, dismatches := r.processor.Process(person.Bio)
 		person.BioMatches = matches
 
-		rating += len(person.BioMatches)
-		rating -= len(dismatches)
+		rating += len(person.BioMatches) * r.config.BioMatchWeight
+		rating -= len(dismatches) * r.config.BioMatchWeight
 	}
+
+	if person.VIP {
+		rating += r.config.VIPAccountWeight
+	}
+
+	rating += person.Alco * r.config.AlcoFactor
+	rating += person.Smoke * r.config.SmokeFactor
+	rating += person.Body * r.config.BodyFactor
 
 	person.Rating = rating
 	return rating
 }
 
-func (r defaultRater) IsRelevant(visitDate time.Time) bool {
+func (r defaultRater) HandleRelevant(person *types.Person, visitDate time.Time) {
 	distance := time.Now().Sub(visitDate)
-	return distance.Hours()*24 <= relevantDays
+	if distance.Hours()/24 > float64(r.config.RelevantDays) {
+		person.Rating = IgnorePerson
+	}
 }

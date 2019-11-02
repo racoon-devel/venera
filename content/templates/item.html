@@ -12,6 +12,15 @@
         {{ if ne $.Person.School "" }}
         <tr><td><u>School:</u> {{ $.Person.School }}</td></tr>
         {{ end }}
+        {{ if ne $.Person.Body 0 }}
+        <tr><td><u>Body:</u> {{ body $.Person.Body }}</td></tr>
+        {{ end }}
+        {{ if ne $.Person.Alco 0 }}
+        <tr><td><u>Alco:</u> {{ relation $.Person.Alco }}</td></tr>
+        {{ end }}
+        {{ if ne $.Person.Smoke 0 }}
+        <tr><td><u>Smoke:</u> {{ relation $.Person.Smoke }}</td></tr>
+        {{ end }}
         <tr><td><u>Description:</u> {{ highlight $.Person.Bio $.Person.BioMatches }}</td></tr>
         <tr><td>
                 {{range $i, $foto := $.Person.Photo }}

@@ -61,3 +61,29 @@ func inc(n uint) uint {
 func hightlight(text string, matches []utils.TextMatch) template.HTML {
 	return template.HTML(utils.Highlight(text, matches, "<mark>", "</mark>"))
 }
+
+func relation(rel int) string {
+	switch rel {
+	case types.Negative:
+		return "negative"
+	case types.Neutral:
+		return "neutral"
+	case types.Positive:
+		return "positive"
+	default:
+		return "not defined"
+	}
+}
+
+func body(body int) string {
+	switch body {
+	case types.Fat:
+		return "fat"
+	case types.Sport:
+		return "sport"
+	case types.Thin:
+		return "thin"
+	default:
+		return "not defined"
+	}
+}

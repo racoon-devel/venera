@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sync"
 	"sync/atomic"
 
@@ -37,11 +38,12 @@ type mambaSearchSession struct {
 	lastError error
 	mutex     sync.Mutex
 
-	provider MambaProvider
-	taskID   uint
-	api      *mambaRequester
-	log      *logging.Logger
-	rater    types.Rater
+	provider   MambaProvider
+	taskID     uint
+	api        *mambaRequester
+	log        *logging.Logger
+	rater      types.Rater
+	lookForExp *regexp.Regexp
 }
 
 func (session *mambaSearchSession) SaveState() string {

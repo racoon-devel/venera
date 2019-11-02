@@ -51,5 +51,5 @@ type Provider interface {
 type Rater interface {
 	Init(log *logging.Logger, settings *SearchSettings)
 	Rate(person *Person) int
-	IsRelevant(visitDate time.Time) bool
+	HandleRelevant(person *Person, visitDate time.Time)
 }

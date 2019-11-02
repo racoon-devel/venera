@@ -5,10 +5,12 @@ import (
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
 
-func NewRater(raterID string, log *logging.Logger, settings *types.SearchSettings) types.Rater {
+const IgnorePerson = -100
+
+func NewRater(raterID string, configuration string, log *logging.Logger, settings *types.SearchSettings) types.Rater {
 	switch raterID {
 	case "default":
-		rater := &defaultRater{}
+		rater := &defaultRater{configName: configuration}
 		rater.Init(log, settings)
 		return rater
 
