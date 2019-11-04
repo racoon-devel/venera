@@ -181,7 +181,5 @@ func convertPersonRecord(record *mambaUser, extraPhotos []string, visitTime time
 		}
 	}
 
-	fmt.Println(person.Link)
-
 	return person
 }
