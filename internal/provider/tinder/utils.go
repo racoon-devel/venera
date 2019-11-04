@@ -52,6 +52,7 @@ func convertPersonRecord(record *tindergo.RecsCoreUser) types.Person {
 	person.Age = uint(diff.Seconds() / 31207680)
 	person.Job = parseFieldList(record.Jobs)
 	person.School = parseFieldList(record.Schools)
+	//person.VisitTime = record.PingTime
 
 	person.Photo = make([]string, 0)
 	for _, photo := range record.Photos {

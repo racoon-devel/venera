@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"html/template"
+	"time"
 
 	"github.com/jinzhu/gorm"
 
@@ -53,6 +54,7 @@ type Person struct {
 	Alco       int
 	Smoke      int
 	Body       int
+	VisitTime time.Time
 }
 
 type Action struct {

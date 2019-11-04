@@ -2,11 +2,10 @@ package rater
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/ccding/go-logging/logging"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"time"
 
 	"github.com/BurntSushi/toml"
 )
@@ -82,6 +81,14 @@ func (r *defaultRater) Rate(person *types.Person) int {
 		return person.Rating
 	}
 
+	if !person.VisitTime.IsZero() {
+		distance := time.Now().Sub(person.VisitTime)
+		if distance.Hours()/24 > float64(r.config.RelevantDays) {
+			person.Rating = IgnorePerson
+			return person.Rating
+		}
+	}
+
 	if len(person.Bio) > r.config.MinBioLength {
 		rating += r.config.BioPresentWeight
 
@@ -102,11 +109,4 @@ func (r *defaultRater) Rate(person *types.Person) int {
 
 	person.Rating = rating
 	return rating
-}
-
-func (r defaultRater) HandleRelevant(person *types.Person, visitDate time.Time) {
-	distance := time.Now().Sub(visitDate)
-	if distance.Hours()/24 > float64(r.config.RelevantDays) {
-		person.Rating = IgnorePerson
-	}
 }

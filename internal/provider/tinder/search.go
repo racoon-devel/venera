@@ -159,6 +159,7 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 	for _, record := range persons {
 		atomic.AddUint32(&session.state.Stat.Retrieved, 1)
 		session.log.Debugf("Rate person '%s'...", record.Name)
+		session.log.Debugf("Ping time: %s", record.PingTime.Format("Mon Jan _2 15:04:05 2006"))
 		person := convertPersonRecord(&record)
 		rating := session.rater.Rate(&person)
 

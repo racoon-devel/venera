@@ -15,9 +15,6 @@ import (
 )
 
 const (
-	delayBatchMin = 3 * time.Minute
-	delayBatchMax = 5 * time.Minute
-
 	mambaAppID     uint = 2341
 	mambaSecretKey      = "3Y3vnn573vt2S4tl6lW8"
 )
@@ -45,6 +42,10 @@ func (session *mambaSearchSession) process(ctx context.Context) {
 		})
 
 		if err != nil {
+			session.mutex.Lock()
+			session.state.Offset++
+			session.mutex.Unlock()
+
 			continue
 		}
 
@@ -88,9 +89,8 @@ func (session *mambaSearchSession) processUser(ctx context.Context, user *mambaU
 		return
 	}
 
-	person := convertPersonRecord(user, photos)
+	person := convertPersonRecord(user, photos, visitTime[0])
 	session.rater.Rate(&person)
-	session.rater.HandleRelevant(&person, visitTime[0])
 	if !session.checkLookFor(user.Familiarity.LookFor) {
 		person.Rating = rater.IgnorePerson
 	}
@@ -120,11 +120,12 @@ func (session *mambaSearchSession) checkLookFor(lookFor string) bool {
 	return true
 }
 
-func convertPersonRecord(record *mambaUser, extraPhotos []string) types.Person {
+func convertPersonRecord(record *mambaUser, extraPhotos []string, visitTime time.Time) types.Person {
 	person := types.Person{
-		UserID: strconv.Itoa(record.Info.Oid),
-		Name:   record.Info.Name,
-		Bio:    record.About,
+		UserID:    strconv.Itoa(record.Info.Oid),
+		Name:      record.Info.Name,
+		Bio:       record.About,
+		VisitTime: visitTime,
 	}
 
 	person.Age = uint(record.Info.Age)
