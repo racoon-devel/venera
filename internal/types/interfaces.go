@@ -2,11 +2,10 @@ package types
 
 import (
 	"context"
-	"net/http"
-	"net/url"
-
 	"github.com/ccding/go-logging/logging"
 	"github.com/gorilla/mux"
+	"net/http"
+	"net/url"
 )
 
 type SessionStatus int
@@ -48,6 +47,6 @@ type Provider interface {
 }
 
 type Rater interface {
-	Init(settings *SearchSettings)
-	Rate(person *Person)
+	Init(log *logging.Logger, settings *SearchSettings)
+	Rate(person *Person) int
 }

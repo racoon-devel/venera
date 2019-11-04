@@ -1,0 +1,26 @@
+{{ define "new.mamba" }}
+    {{ template "header" 3 }}
+    <form action="/task/new/mamba" method="POST" id="task-form">
+        <table>
+            <tr>
+                <td>Age</td>
+                <td><input type="text" name="ageFrom"> - <input type="text" name="ageTo"></td>
+            </tr>
+            <tr>
+                <td>City</td>
+                <td><input type="text" name="city" value=""></td>
+            </tr>
+            <tr>
+                <td colspan="2"> Likes<textarea name="likes" rows="5" cols="100"></textarea></td>
+            </tr>
+            <tr>
+                <td colspan="2"> Dislikes<textarea name="dislikes" rows="5" cols="100"></textarea></td>
+            </tr>
+            <tr>
+                <td colspan="2"><input type="submit" value="Submit"></td>
+            </tr>
+        </table>
+        <input type="hidden" name="login_token" value="">
+    </form>
+    {{ template "footer" }}
+{{ end }}

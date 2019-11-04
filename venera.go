@@ -4,11 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/ccding/go-logging/logging"
 	"os"
 	"os/signal"
 	"runtime"
 	"sync"
+
+	"github.com/ccding/go-logging/logging"
 
 	"racoondev.tk/gitea/racoon/venera/internal/bot"
 	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
@@ -16,7 +17,7 @@ import (
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
-const version = "0.2"
+const version = "0.3"
 
 func main() {
 	fmt.Printf("Venera Project v%s\n", version)

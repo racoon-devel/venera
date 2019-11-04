@@ -24,7 +24,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := loginResponse{LoginToken: auth.LoginToken}
+	response := loginResponse{LoginToken: ""}
 	body, _ := json.Marshal(&response)
 	w.Write(body)
 }

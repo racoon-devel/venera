@@ -18,3 +18,4 @@ ENV GOBIN=/go/bin
 RUN go install -v ./venera.go && rm -rf *
 
 CMD ["venera", "-verbose"]
+

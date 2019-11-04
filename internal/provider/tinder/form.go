@@ -27,11 +27,11 @@ func parseForm(r *http.Request, editMode bool) (*searchSettings, *tinderAuth, er
 
 		auth = newTinderAuth(ctx.Tel)
 
-		if len(r.Form["login_token"]) != 1 || len(r.Form["login_token"][0]) == 0 {
-			return nil, nil, fmt.Errorf("You must fill login code")
-		}
+		//if len(r.Form["login_token"]) != 1 || len(r.Form["login_token"][0]) == 0 {
+		//	return nil, nil, fmt.Errorf("You must fill login code")
+		//}
 
-		auth.LoginToken = r.Form["login_token"][0]
+		//auth.LoginToken = r.Form["login_token"][0]
 
 		if len(r.Form["code"]) != 1 || len(r.Form["code"][0]) == 0 {
 			return nil, nil, fmt.Errorf("You must fill login code")

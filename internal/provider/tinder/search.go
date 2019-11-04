@@ -10,6 +10,7 @@ import (
 
 	"racoondev.tk/gitea/racoon/venera/internal/storage"
 
+	"racoondev.tk/gitea/racoon/venera/internal/rater"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"racoondev.tk/gitea/racoon/venera/tindergo"
@@ -24,10 +25,29 @@ const (
 	requestPerSession = 5
 
 	delaySessionMin = 1 * time.Hour
-	delaySessionMax = 3 * time.Hour
+	delaySessionMax = 2 * time.Hour
 )
 
 func (session *tinderSearchSession) auth(ctx context.Context) error {
+	auth := newTinderAuth( session.state.Search.Tel)
+
+	session.mutex.Lock()
+	auth.RefreshToken = session.state.Search.RefreshToken
+	session.mutex.Unlock()
+
+	err := auth.Login()
+	if err == nil {
+		session.mutex.Lock()
+		session.state.Search.APIToken = auth.APIToken
+		session.state.Search.RefreshToken = auth.RefreshToken
+		session.api.SetAPIToken(auth.APIToken)
+		session.mutex.Unlock()
+
+		return nil
+	} else {
+		session.log.Warnf("Login failed: %+v", err)
+	}
+
 	for {
 		auth := newTinderAuth(session.state.Search.Tel)
 		if err := auth.RequestCode(); err != nil {
@@ -40,8 +60,13 @@ func (session *tinderSearchSession) auth(ctx context.Context) error {
 			continue
 		}
 
-		auth.LoginCode = code
-		if err := auth.RequestToken(); err != nil {
+		if err := auth.ValidateCode(code); err != nil {
+			session.raise(err)
+			utils.Delay(ctx, utils.Range{Min: delayBatchMin, Max: delayBatchMax})
+			continue
+		}
+
+		if err := auth.Login(); err != nil {
 			session.raise(err)
 			utils.Delay(ctx, utils.Range{Min: delayBatchMin, Max: delayBatchMax})
 			continue
@@ -51,6 +76,7 @@ func (session *tinderSearchSession) auth(ctx context.Context) error {
 
 		session.mutex.Lock()
 		session.state.Search.APIToken = auth.APIToken
+		session.state.Search.RefreshToken = auth.RefreshToken
 		session.api.SetAPIToken(auth.APIToken)
 		session.mutex.Unlock()
 
@@ -96,14 +122,13 @@ func (session *tinderSearchSession) setup(ctx context.Context) {
 func (session *tinderSearchSession) process(ctx context.Context) {
 	session.log.Debugf("Starting Tinder API Session....")
 
+	session.api = tindergo.New()
+	session.auth(ctx)
+
 	session.mutex.Lock()
 	session.status = types.StatusRunning
 
-	session.api = tindergo.New()
-	session.api.SetAPIToken(session.state.Search.APIToken)
-
-	session.rater = &tinderRater{}
-	session.rater.Init(session.log, &session.state.Search.SearchSettings)
+	session.rater = rater.NewRater("default", "tinder", session.log, &session.state.Search.SearchSettings)
 
 	if session.top == nil {
 		session.top = newTopList(maxSuperLikes)
@@ -159,6 +184,7 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 	for _, record := range persons {
 		atomic.AddUint32(&session.state.Stat.Retrieved, 1)
 		session.log.Debugf("Rate person '%s'...", record.Name)
+		session.log.Debugf("Ping time: %s", record.PingTime.Format("Mon Jan _2 15:04:05 2006"))
 		person := convertPersonRecord(&record)
 		rating := session.rater.Rate(&person)
 

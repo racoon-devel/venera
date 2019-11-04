@@ -15,6 +15,7 @@ type searchSettings struct {
 	types.SearchSettings
 	Tel       string
 	APIToken  string
+	RefreshToken string
 	Latitude  float32
 	Longitude float32
 }
@@ -51,11 +52,16 @@ func (provider TinderProvider) CreateSearchSession(r *http.Request) (types.Searc
 		return nil, err
 	}
 
-	if err := auth.RequestToken(); err != nil {
+	if err := auth.ValidateCode(auth.LoginCode); err != nil {
+		return nil, fmt.Errorf("Tinder auth failed: %+v", err)
+	}
+
+	if err := auth.Login(); err != nil {
 		return nil, fmt.Errorf("Tinder auth failed: %+v", err)
 	}
 
 	settings.APIToken = auth.APIToken
+	settings.RefreshToken = auth.RefreshToken
 
 	return provider.newSearchSession(settings), nil
 }

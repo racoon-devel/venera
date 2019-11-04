@@ -3,11 +3,14 @@ package types
 import (
 	"fmt"
 	"html/template"
+	"time"
 
 	"github.com/jinzhu/gorm"
 
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
+
+const MyAge = 28
 
 type TaskRecord struct {
 	gorm.Model
@@ -24,6 +27,19 @@ type SearchSettings struct {
 	Dislikes []string
 }
 
+const (
+	Negative   = -1
+	NotDefined = 0
+	Neutral    = 1
+	Positive   = 2
+)
+
+const (
+	Fat   = -1
+	Sport = 1
+	Thin  = 2
+)
+
 type Person struct {
 	UserID     string
 	Rating     int
@@ -34,6 +50,12 @@ type Person struct {
 	Job        string
 	School     string
 	Age        uint
+	VIP        bool
+	Alco       int
+	Smoke      int
+	Body       int
+	VisitTime  time.Time
+	Link       string
 }
 
 type Action struct {
