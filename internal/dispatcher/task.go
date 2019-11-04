@@ -23,8 +23,8 @@ const (
 	ModeIdle = iota
 	ModeActive
 
-	pollingInterval time.Duration = 20 * time.Second
-	statInterval    time.Duration = 50 * time.Second
+	pollingInterval time.Duration = 1 * time.Minute
+	statInterval    time.Duration = 1 * time.Hour
 )
 
 type Task struct {

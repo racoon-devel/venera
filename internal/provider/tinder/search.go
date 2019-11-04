@@ -25,7 +25,7 @@ const (
 	requestPerSession = 5
 
 	delaySessionMin = 1 * time.Hour
-	delaySessionMax = 3 * time.Hour
+	delaySessionMax = 2 * time.Hour
 )
 
 func (session *tinderSearchSession) auth(ctx context.Context) error {

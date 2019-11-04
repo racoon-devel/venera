@@ -116,6 +116,12 @@ func (session *mambaSearchSession) Update(w http.ResponseWriter, r *http.Request
 			return false, err
 		}
 
+		api := newMambaRequester(mambaAppID, mambaSecretKey)
+		cityID, err := api.GetCityID(search.City)
+		if err != nil {
+			return false, err
+		}
+
 		session.mutex.Lock()
 		defer session.mutex.Unlock()
 
@@ -125,6 +131,7 @@ func (session *mambaSearchSession) Update(w http.ResponseWriter, r *http.Request
 		session.state.Search.Dislikes = search.Dislikes
 		session.state.Search.City = search.City
 		session.state.Offset = 0
+		session.state.Search.CityID = cityID
 
 		return true, nil
 	}
