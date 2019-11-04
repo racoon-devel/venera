@@ -11,30 +11,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ac97049503d17a2de94676e70e7ef50dde787c13128b977c870b04602718e7b8"
-  name = "github.com/DiSiqueira/TinderGo"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "61460c0e6740943acc5102058a2631cb7eb9a7de"
-
-[[projects]]
-  digest = "1:573fa46f8d413d4bc3f7cc5e86b2c43cb21559f4fb0a19d9874d228e28fdc07c"
-  name = "github.com/PuerkitoBio/goquery"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "2d2796f41742ece03e8086188fa4db16a3a0b458"
-  version = "v1.5.0"
-
-[[projects]]
-  digest = "1:24ffaa1636eba8f0cfc7671121d05a9a2040605adb1927a93be88fbc2ea6cfdb"
-  name = "github.com/andybalholm/cascadia"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "b69f6c92dfc187ebfe3914df716c2647a3af0ba0"
-  version = "v1.1.0"
-
-[[projects]]
-  branch = "master"
   digest = "1:067658196413b11d20f243b945b1c50d86376cdc01562442cda860cd175b5278"
   name = "github.com/ccding/go-config-reader"
   packages = ["config"]
@@ -72,14 +48,6 @@
   pruneopts = "UT"
   revision = "00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15"
   version = "v1.7.3"
-
-[[projects]]
-  branch = "master"
-  digest = "1:4a71114c27ec056e4a400fa2ed4e5caa08afc32fdbb67c5f5ccb74385c4a7e49"
-  name = "github.com/jasonlvhit/gocron"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "47e27a9e0dc7cbe56e05a51111d316b6818a762d"
 
 [[projects]]
   digest = "1:a0216296da5c3191358b114fa8d2490477f5dff7380541551495b4f2a16989b3"
@@ -122,6 +90,14 @@
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:53bc4cd4914cd7cd52139990d5170d6dc99067ae31c56530621b18b35fc30318"
+  name = "github.com/mitchellh/mapstructure"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3536a929edddb9a5b34bd6861dc4a9647cb459fe"
+  version = "v1.1.2"
+
+[[projects]]
   digest = "1:7c56e4e9c4d34167c30636d4b22ac2316d74ce1d14a78bc7a828f03603d410f3"
   name = "github.com/parnurzeal/gorequest"
   packages = ["."]
@@ -155,18 +131,16 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3f2b58002f8f4b4eb22a40c4ffbf19bfba1c878e43aa16c6ae3a4bd12ea19fa7"
+  digest = "1:b1291957e6bd4eee4687152a2bb93963cbec296aba40c957e6012c94358eee44"
   name = "golang.org/x/net"
   packages = [
-    "html",
-    "html/atom",
     "idna",
     "internal/socks",
     "proxy",
     "publicsuffix",
   ]
   pruneopts = "UT"
-  revision = "fe3aa8a4527195a6057b3fad46619d7d090e99b5"
+  revision = "0deb6923b6d97481cb43bc1043fe5b72a0143032"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -206,15 +180,13 @@
   analyzer-version = 1
   input-imports = [
     "github.com/BurntSushi/toml",
-    "github.com/DiSiqueira/TinderGo",
-    "github.com/PuerkitoBio/goquery",
     "github.com/ccding/go-logging/logging",
     "github.com/esimov/pigo/core",
     "github.com/go-telegram-bot-api/telegram-bot-api",
     "github.com/gorilla/mux",
-    "github.com/jasonlvhit/gocron",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/postgres",
+    "github.com/mitchellh/mapstructure",
     "github.com/parnurzeal/gorequest",
     "github.com/phf/go-queue/queue",
     "golang.org/x/net/proxy",

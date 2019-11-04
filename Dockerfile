@@ -9,7 +9,7 @@ EXPOSE 80/tcp
 
 # Storage
 WORKDIR "/var/lib/venera"
-COPY . content
+COPY content/ .
 
 # Build venera
 WORKDIR /go/src/racoondev.tk/gitea/racoon/venera
@@ -17,4 +17,4 @@ COPY . .
 ENV GOBIN=/go/bin
 RUN go install -v ./venera.go && rm -rf *
 
-CMD ["venera"]
+CMD ["venera", "-verbose"]
