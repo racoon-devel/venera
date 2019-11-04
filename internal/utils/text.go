@@ -9,6 +9,11 @@ import (
 	"github.com/ccding/go-logging/logging"
 )
 
+type matchPattern struct {
+	expr *regexp.Regexp
+	weight int
+}
+
 type TextProcessor struct {
 	log      *logging.Logger
 	positive []*regexp.Regexp

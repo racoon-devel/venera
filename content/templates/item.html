@@ -35,7 +35,7 @@
                     <td><a class="button button-small" href="/result/{{$.ID}}/favour">FAVOUR</a></td>
                     {{ end }}
                     {{ range $i, $a := $.Actions }}
-                    <td><a class="button button-small" href="{{ $a.Link }}">{{ $a.Title }}</a></td>
+                    <td><a  target="_blank" rel="noopener noreferrer" class="button button-small" href="{{ $a.Link }}">{{ $a.Title }}</a></td>
                     {{ end }}
                 </tr>
         </table>

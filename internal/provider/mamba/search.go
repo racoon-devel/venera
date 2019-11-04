@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -126,6 +127,7 @@ func convertPersonRecord(record *mambaUser, extraPhotos []string, visitTime time
 		Name:      record.Info.Name,
 		Bio:       record.About,
 		VisitTime: visitTime,
+		Link:      strings.Replace(record.Info.Link, "%PARTNER_URL%", "https://mamba.ru", 1),
 	}
 
 	person.Age = uint(record.Info.Age)
@@ -178,6 +180,8 @@ func convertPersonRecord(record *mambaUser, extraPhotos []string, visitTime time
 
 		}
 	}
+
+	fmt.Println(person.Link)
 
 	return person
 }

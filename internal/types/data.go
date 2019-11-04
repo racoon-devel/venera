@@ -54,7 +54,8 @@ type Person struct {
 	Alco       int
 	Smoke      int
 	Body       int
-	VisitTime time.Time
+	VisitTime  time.Time
+	Link       string
 }
 
 type Action struct {

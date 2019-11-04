@@ -1,7 +1,6 @@
 package mamba
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 
@@ -66,10 +65,7 @@ func (provider MambaProvider) GetResultActions(result *types.PersonRecord) []typ
 	return []types.Action{
 		{
 			Title: "Open",
-			Link: template.URL(fmt.Sprintf("/task/%d/open?id=%s", result.TaskID,
-				result.Person.UserID)),
-			Command: fmt.Sprintf("/action %d open id %s", result.TaskID,
-				result.Person.UserID),
+			Link: template.URL(result.Person.Link),
 		},
 	}
 }
