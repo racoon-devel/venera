@@ -93,10 +93,10 @@ func (r *defaultRater) Rate(person *types.Person) int {
 		rating += r.config.BioPresentWeight
 
 		matches, dismatches := r.processor.Process(person.Bio)
-		person.BioMatches = matches
+		person.BioMatches = matches.Matches
 
-		rating += len(person.BioMatches) * r.config.BioMatchWeight
-		rating -= len(dismatches) * r.config.BioMatchWeight
+		rating += matches.Weight * r.config.BioMatchWeight
+		rating -= dismatches.Weight * r.config.BioMatchWeight
 	}
 
 	if person.VIP {
