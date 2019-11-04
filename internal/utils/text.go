@@ -4,20 +4,31 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/ccding/go-logging/logging"
 )
 
+type matchPattern struct {
+	expr *regexp.Regexp
+	weight int
+}
+
 type TextProcessor struct {
 	log      *logging.Logger
-	positive []*regexp.Regexp
-	negative []*regexp.Regexp
+	positive []matchPattern
+	negative []matchPattern
 }
 
 type TextMatch struct {
 	Begin int
 	End   int
+}
+
+type MatchResult struct {
+	Matches []TextMatch
+	Weight int
 }
 
 func NewTextProcessor(log *logging.Logger, positiveKeywords []string, negativeKeywords []string) (*TextProcessor, error) {
@@ -55,17 +66,17 @@ func Validate(patterns []string) error {
 	return nil
 }
 
-func (self *TextProcessor) Process(text string) (positiveMatches []TextMatch, negativeMatches []TextMatch) {
+func (self *TextProcessor) Process(text string) (positiveMatches MatchResult, negativeMatches MatchResult) {
 	text = strings.ToLower(text)
 	positiveMatches = self.process(text, self.positive)
 	negativeMatches = self.process(text, self.negative)
 	return
 }
 
-func (self *TextProcessor) process(text string, exprs []*regexp.Regexp) []TextMatch {
-	result := make([]TextMatch, 0)
-	for _, expr := range exprs {
-		matches := expr.FindAllStringSubmatchIndex(" " + text + " ", -1)
+func (self *TextProcessor) process(text string, patterns []matchPattern) MatchResult {
+	result := MatchResult{Matches: []TextMatch{}}
+	for _, pattern := range patterns {
+		matches := pattern.expr.FindAllStringSubmatchIndex(" " + text + " ", -1)
 		for _, match := range matches {
 			begin := match[2]-1
 			end := match[3]-1
@@ -73,16 +84,17 @@ func (self *TextProcessor) process(text string, exprs []*regexp.Regexp) []TextMa
 				continue
 			}
 
-			result = append(result, TextMatch{Begin: begin, End: end})
-			self.log.Debugf("mactched '%s' of '%s'", text[begin:end], expr.String())
+			result.Matches = append(result.Matches, TextMatch{Begin: begin, End: end})
+			result.Weight += pattern.weight
+			self.log.Debugf("matched '%s' of '%s'", text[begin:end], pattern.expr.String())
 		}
 	}
 
 	return result
 }
 
-func (self *TextProcessor) compileExpressions(keywords []string) ([]*regexp.Regexp, error) {
-	expressions := make([]*regexp.Regexp, 0)
+func (self *TextProcessor) compileExpressions(keywords []string) ([]matchPattern, error) {
+	expressions := make([]matchPattern, 0)
 	for _, keyword := range keywords {
 		if keyword == "" {
 			continue
@@ -93,7 +105,7 @@ func (self *TextProcessor) compileExpressions(keywords []string) ([]*regexp.Rege
 			return nil, err
 		}
 
-		self.log.Debugf("compiled '%s' -> '%s'", keyword, expr.String())
+		self.log.Debugf("compiled '%s' -> '%s'", keyword, expr.expr.String())
 
 		expressions = append(expressions, expr)
 	}
@@ -106,6 +118,12 @@ func validate(pattern string) error {
 		return fmt.Errorf("'%s' must have not leading and trailing spaces", pattern)
 	}
 
+	wexpr := regexp.MustCompile(`@[\d]+$`)
+	strs := wexpr.FindAllString(pattern, 1)
+	if len(strs) > 0 {
+		pattern = strings.Replace(pattern, strs[0], "", 1)
+	}
+
 	matched, _ := regexp.MatchString(`[[:punct:]]|\d|\n|\t`, strings.ReplaceAll(pattern, "*", ""))
 	if matched {
 		return fmt.Errorf("'%s' must have not digits, puncts or other symbols special symbols except '*'", pattern)
@@ -114,11 +132,20 @@ func validate(pattern string) error {
 	return nil
 }
 
-func compile(keyword string) (*regexp.Regexp, error) {
+func compile(keyword string) (matchPattern, error) {
+	result := matchPattern{weight:1}
+
+	wexpr := regexp.MustCompile(`@[\d]+$`)
+	strs := wexpr.FindAllString(keyword, 1)
+	if len(strs) > 0 {
+		keyword = strings.Replace(keyword, strs[0], "", 1)
+		weight, _ := strconv.ParseInt(strs[0][1:], 10, 16)
+		result.weight = int(weight)
+	}
+
 	var expr string
 
 	expr += `\P{L}`
-
 
 	expr += "(" + keyword
 	expr = strings.ReplaceAll(expr, "*", `[\p{L}]*`)
@@ -129,7 +156,9 @@ func compile(keyword string) (*regexp.Regexp, error) {
 		expr += `\P{L}`
 	}
 
-	return regexp.Compile(expr)
+	var err error
+	result.expr, err = regexp.Compile(expr)
+	return result, err
 }
 
 type point struct {

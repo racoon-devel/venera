@@ -26,3 +26,16 @@ func RandomCoordinate(base float32) float32 {
 		return base - rand.Float32()*randomDistanceCo
 	}
 }
+
+func ListToString(list []string) string {
+	var result string
+	for _, item := range list {
+		result += item + ","
+	}
+
+	if len(result) != 0 {
+		result = strings.TrimSuffix(result, result[len(result)-1:])
+	}
+
+	return result
+}

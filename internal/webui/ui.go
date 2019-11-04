@@ -51,6 +51,8 @@ func LoadTemplates() error {
 		"mod2":      mod2,
 		"inc":       inc,
 		"highlight": hightlight,
+		"body":      body,
+		"relation":  relation,
 	})
 
 	templates, err = root.ParseFiles(tmplFiles...)

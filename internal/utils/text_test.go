@@ -19,6 +19,7 @@ type processorTestCase struct {
 	positiveMatches []string
 	negativeMatches []string
 	output          string
+	weight int
 }
 
 type highlightTestCase struct {
@@ -146,6 +147,31 @@ var (
 			text:   "Это безумный недом",
 			output: "Это безумный недом",
 		},
+		{
+			positive: []string{
+				"*умн* дом*@5",
+			},
+			positiveMatches:[]string{
+				"безумный дом",
+			},
+			text:   "Это безумный дом",
+			output: "Это <b>безумный дом</b>",
+			weight: 5,
+		},
+		{
+			positive: []string{
+				"енот*@5",
+				"ночь@2",
+			},
+			positiveMatches:[]string{
+				"енота",
+				"енотов",
+				"ночь",
+			},
+			text:   "Два енота у пруда водку пили до утра. Всю ночь они орали, а потом менты забрали. 'Про енотов'",
+			output: "Два <b>енота</b> у пруда водку пили до утра. Всю <b>ночь</b> они орали, а потом менты забрали. 'Про <b>енотов</b>",
+			weight: 12,
+		},
 	}
 
 	highlightTestCases = []highlightTestCase{
@@ -246,15 +272,23 @@ func TestTextProcessor(t *testing.T) {
 		}
 
 		pos, neg := proc.Process(test.text)
-		if !isResultEqual(test.text, pos, test.positiveMatches) {
-			t.Errorf("Test %d: '%+v' != '%+v'", i+1, getStringSlice(test.text, pos), test.positiveMatches)
+		if !isResultEqual(test.text, pos.Matches, test.positiveMatches) {
+			t.Errorf("Test %d: '%+v' != '%+v'", i+1, getStringSlice(test.text, pos.Matches), test.positiveMatches)
 		}
 
-		if !isResultEqual(test.text, neg, test.negativeMatches) {
-			t.Errorf("Test %d: '%+v' != '%+v'", i+1, getStringSlice(test.text, neg), test.negativeMatches)
+		if !isResultEqual(test.text, neg.Matches, test.negativeMatches) {
+			t.Errorf("Test %d: '%+v' != '%+v'", i+1, getStringSlice(test.text, neg.Matches), test.negativeMatches)
 		}
 
-		highlighted := Highlight(test.text, pos, openTag, closeTag)
+		if test.weight == 0 {
+			test.weight = len(pos.Matches)
+		}
+
+		if test.weight != pos.Weight {
+			t.Errorf("Test %d: Weight not equal: %d != %d", i+1, test.weight, pos.Weight)
+		}
+
+		highlighted := Highlight(test.text, pos.Matches, openTag, closeTag)
 		if highlighted != test.output {
 			t.Errorf("Test %d: '%s' != '%s'", i+1, highlighted, test.output)
 		}

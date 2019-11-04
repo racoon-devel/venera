@@ -10,6 +10,7 @@ import (
 
 	"racoondev.tk/gitea/racoon/venera/internal/storage"
 
+	"racoondev.tk/gitea/racoon/venera/internal/rater"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"racoondev.tk/gitea/racoon/venera/tindergo"
@@ -24,7 +25,7 @@ const (
 	requestPerSession = 5
 
 	delaySessionMin = 1 * time.Hour
-	delaySessionMax = 3 * time.Hour
+	delaySessionMax = 2 * time.Hour
 )
 
 func (session *tinderSearchSession) auth(ctx context.Context) error {
@@ -102,8 +103,7 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 	session.api = tindergo.New()
 	session.api.SetAPIToken(session.state.Search.APIToken)
 
-	session.rater = &tinderRater{}
-	session.rater.Init(session.log, &session.state.Search.SearchSettings)
+	session.rater = rater.NewRater("default", "tinder", session.log, &session.state.Search.SearchSettings)
 
 	if session.top == nil {
 		session.top = newTopList(maxSuperLikes)
@@ -159,6 +159,7 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 	for _, record := range persons {
 		atomic.AddUint32(&session.state.Stat.Retrieved, 1)
 		session.log.Debugf("Rate person '%s'...", record.Name)
+		session.log.Debugf("Ping time: %s", record.PingTime.Format("Mon Jan _2 15:04:05 2006"))
 		person := convertPersonRecord(&record)
 		rating := session.rater.Rate(&person)
 
