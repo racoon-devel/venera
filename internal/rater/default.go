@@ -17,7 +17,7 @@ type defaultConfig struct {
 
 	VIPAccountWeight int
 	BioMatchWeight   int
-	BioPresentWight  int
+	BioPresentWeight  int
 
 	AlcoFactor  int
 	SmokeFactor int
@@ -83,7 +83,7 @@ func (r *defaultRater) Rate(person *types.Person) int {
 	}
 
 	if len(person.Bio) > r.config.MinBioLength {
-		rating += r.config.BioPresentWight
+		rating += r.config.BioPresentWeight
 
 		matches, dismatches := r.processor.Process(person.Bio)
 		person.BioMatches = matches
