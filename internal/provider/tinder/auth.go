@@ -3,10 +3,10 @@ package tinder
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 )
 
 const (
@@ -14,10 +14,10 @@ const (
 )
 
 type tinderAuth struct {
-	Tel        string
-	LoginToken string
-	LoginCode  string
-	APIToken   string
+	Tel          string
+	RefreshToken string
+	LoginCode    string
+	APIToken     string
 }
 
 func tinderRequest(url string, requestBody io.Reader) ([]byte, error) {
@@ -53,18 +53,22 @@ func newTinderAuth(tel string) *tinderAuth {
 
 func (self *tinderAuth) RequestCode() error {
 	type codeResponse struct {
-		LoginToken string `json:"login_request_code"`
+		Meta struct {
+			Status int
+		}
+		Data struct {
+			SmsSent bool `json:"sms_sent"`
+		}
 	}
 
 	self.LoginCode = ""
-	self.LoginToken = ""
+	self.RefreshToken = ""
 	self.APIToken = ""
 
-	url := "https://graph.accountkit.com/v1.2/start_login?access_token=AA%7C464891386855067%7Cd1891abb4b0bcdfa0580d9b839f4a522&credentials_type=phone_number&fb_app_events_enabled=1&fields=privacy_policy%2Cterms_of_service&locale=fr_FR&phone_number=" +
-		url.QueryEscape(self.Tel) +
-		"&response_type=token&sdk=ios"
+	url := "https://api.gotinder.com/v2/auth/sms/send?auth_type=sms&locale=ru"
+	buffer := bytes.NewBuffer([]byte(fmt.Sprintf(`{"phone_number":"%s"}`, self.Tel)))
 
-	body, err := tinderRequest(url, nil)
+	body, err := tinderRequest(url, buffer)
 	if err != nil {
 		return err
 	}
@@ -74,71 +78,112 @@ func (self *tinderAuth) RequestCode() error {
 		return err
 	}
 
-	self.LoginToken = cr.LoginToken
+	if cr.Meta.Status != 200 || !cr.Data.SmsSent {
+		return fmt.Errorf("invalid server response: %+v", &cr)
+	}
 
 	return nil
 }
 
-func (self *tinderAuth) RequestToken() error {
+func (self *tinderAuth) ValidateCode(code string) error {
+	type validateRequest struct {
+		Code     string `json:"otp_code"`
+		Tel      string `json:"phone_number"`
+		IsUpdate bool   `json:"is_update"`
+	}
+
+	type validateResponse struct {
+		Meta struct {
+			Status int
+		}
+		Data struct {
+			RefreshToken string `json:"refresh_token"`
+			Validated    bool
+		}
+	}
+
 	self.APIToken = ""
+	self.LoginCode = code
 
-	url := "https://graph.accountkit.com/v1.2/confirm_login?access_token=AA%7C464891386855067%7Cd1891abb4b0bcdfa0580d9b839f4a522&confirmation_code=" +
-		self.LoginCode + "&credentials_type=phone_number&fb_app_events_enabled=1&fields=privacy_policy%2Cterms_of_service&locale=fr_FR&login_request_code=" +
-		self.LoginToken + "&phone_number=" + self.Tel + "&response_type=token&sdk=ios"
+	url := "https://api.gotinder.com/v2/auth/sms/validate?auth_type=sms&locale=ru"
 
-	body, err := tinderRequest(url, nil)
+	req := validateRequest{
+		Code: self.LoginCode,
+		Tel:  self.Tel,
+	}
+
+	requestBody, err := json.Marshal(&req)
 	if err != nil {
 		return err
 	}
 
-	type verifyResponse struct {
-		AccessToken string `json:"access_token"`
-		AccessID    string `json:"id"`
+	body, err := tinderRequest(url, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return err
 	}
 
-	type getTokenRequest struct {
-		Token  string `json:"token"`
-		ID     string `json:"id"`
-		Client string `json:"client_version"`
-	}
-
-	verify := &verifyResponse{}
+	verify := &validateResponse{}
 	err = json.Unmarshal(body, verify)
 	if err != nil {
 		return err
 	}
 
-	req := &getTokenRequest{Token: verify.AccessToken, ID: verify.AccessID, Client: "9.0.1"}
+	if !verify.Data.Validated || verify.Meta.Status != 200 {
+		return fmt.Errorf("invalid server response: %+v", verify)
+	}
 
-	requestBody, err := json.Marshal(req)
+	self.RefreshToken = verify.Data.RefreshToken
+
+	return nil
+}
+
+func (self *tinderAuth) Login() error {
+	type loginRequest struct {
+		Tel          string `json:"phone_number"`
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	type loginResponse struct {
+		Meta struct {
+			Status int
+		}
+		Data struct {
+			RefreshToken string `json:"refresh_token"`
+			APIToken     string `json:"api_token"`
+			IsNewUser    bool   `json:"is_new_user"`
+		}
+	}
+
+	self.APIToken = ""
+
+	url := "https://api.gotinder.com/v2/auth/login/sms?locale=en"
+	req := loginRequest{
+		Tel:          self.Tel,
+		RefreshToken: self.RefreshToken,
+	}
+
+	requestBody, err := json.Marshal(&req)
 	if err != nil {
 		return err
 	}
 
-	url = "https://api.gotinder.com/v2/auth/login/accountkit"
-
-	body, err = tinderRequest(url, bytes.NewBuffer(requestBody))
+	body, err := tinderRequest(url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return err
 	}
 
-	// лень делать преобразование типов
-	type data struct {
-		APIToken string `json:"api_token"`
-	}
-
-	type response struct {
-		Data data
-	}
-
-	tokenHolder := &response{}
-
-	err = json.Unmarshal(body, tokenHolder)
+	login := &loginResponse{}
+	err = json.Unmarshal(body, login)
 	if err != nil {
 		return err
 	}
 
-	self.APIToken = tokenHolder.Data.APIToken
+	if login.Data.IsNewUser || login.Meta.Status != 200 {
+		return fmt.Errorf("invalid server response: %+v", login)
+	}
+
+	self.RefreshToken = login.Data.RefreshToken
+	self.APIToken = login.Data.APIToken
 
 	return nil
 }
