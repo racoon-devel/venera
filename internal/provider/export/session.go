@@ -25,6 +25,7 @@ type exportStat struct {
 type exportState struct {
 	Search searchSettings
 	Stat   exportStat
+	Offset uint
 }
 
 type exportSession struct {
@@ -37,6 +38,8 @@ type exportSession struct {
 	provider ExportProvider
 	taskID   uint
 	log      *logging.Logger
+
+	total uint
 }
 
 func (session *exportSession) SaveState() string {
@@ -66,6 +69,9 @@ func (session *exportSession) Reset() {
 	atomic.StoreUint32(&session.state.Stat.Retrieved, 0)
 	atomic.StoreUint32(&session.state.Stat.Processed, 0)
 	atomic.StoreUint32(&session.state.Stat.Progress, 0)
+
+	session.state.Offset = 0
+	session.total = 0
 }
 
 func (session *exportSession) Status() types.SessionStatus {
@@ -119,4 +125,14 @@ func (session *exportSession) GetStat() map[string]uint32 {
 	stat["Progress"] = atomic.LoadUint32(&session.state.Stat.Progress)
 
 	return stat
+}
+
+func (session *exportSession) raise(err error) {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	session.log.Criticalf("export: %+v", err)
+	session.status = types.StatusError
+	session.lastError = err
+	atomic.AddUint32(&session.state.Stat.Errors, 1)
 }
