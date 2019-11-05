@@ -1,0 +1,122 @@
+package export
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+	"sync"
+	"sync/atomic"
+
+	"github.com/ccding/go-logging/logging"
+
+	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"racoondev.tk/gitea/racoon/venera/internal/webui"
+)
+
+type exportStat struct {
+	Retrieved uint32
+	Errors    uint32
+	Progress  uint32
+	Processed uint32
+}
+
+type exportState struct {
+	Search searchSettings
+	Stat   exportStat
+}
+
+type exportSession struct {
+	// Защищено мьютексом
+	state     exportState
+	status    types.SessionStatus
+	lastError error
+	mutex     sync.Mutex
+
+	provider ExportProvider
+	taskID   uint
+	log      *logging.Logger
+}
+
+func (session *exportSession) SaveState() string {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	data, err := json.Marshal(&session.state)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(data)
+}
+
+func (session *exportSession) LoadState(state string) error {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	return json.Unmarshal([]byte(state), &session.state)
+}
+
+func (session *exportSession) Reset() {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	atomic.StoreUint32(&session.state.Stat.Errors, 0)
+	atomic.StoreUint32(&session.state.Stat.Retrieved, 0)
+	atomic.StoreUint32(&session.state.Stat.Processed, 0)
+	atomic.StoreUint32(&session.state.Stat.Progress, 0)
+}
+
+func (session *exportSession) Status() types.SessionStatus {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+	return session.status
+}
+
+func (session *exportSession) GetLastError() error {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+	err := session.lastError
+	session.lastError = nil
+	return err
+}
+
+func (session *exportSession) Process(ctx context.Context, taskID uint) {
+	defer func() {
+		if r := recover(); r != nil {
+			session.log.Errorf("Export session panic: %+v. Recovered", r)
+
+			session.mutex.Lock()
+			defer session.mutex.Unlock()
+			session.status = types.StatusStopped
+		}
+	}()
+
+	session.taskID = taskID
+	session.process(ctx)
+}
+
+func (session *exportSession) Poll() {
+}
+
+func (session *exportSession) Update(w http.ResponseWriter, r *http.Request) (bool, error) {
+	// TODO: display progress and download link
+	webui.DisplayEditTask(w, "export", nil)
+
+	return false, nil
+}
+
+func (session *exportSession) Action(action string, params url.Values) error {
+	return fmt.Errorf("export: undefined action: '%s'", action)
+}
+
+func (session *exportSession) GetStat() map[string]uint32 {
+	stat := make(map[string]uint32)
+	stat["Retrieved"] = atomic.SwapUint32(&session.state.Stat.Retrieved, 0)
+	stat["Errors"] = atomic.SwapUint32(&session.state.Stat.Errors, 0)
+	stat["Processed"] = atomic.SwapUint32(&session.state.Stat.Processed, 0)
+	stat["Progress"] = atomic.LoadUint32(&session.state.Stat.Progress)
+
+	return stat
+}
