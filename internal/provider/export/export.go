@@ -11,6 +11,11 @@ import (
 
 type searchSettings struct {
 	types.SearchSettings
+	taskID          uint
+	ExportFavourite bool
+	ExportPhotos    bool
+	ExportAbout     bool
+	ExportDump      bool
 }
 
 type ExportProvider struct {
@@ -36,10 +41,6 @@ func (provider *ExportProvider) SetLogger(log *logging.Logger) {
 func (provider ExportProvider) CreateSearchSession(r *http.Request) (types.SearchSession, error) {
 	settings, err := parseForm(r)
 	if err != nil {
-		return nil, err
-	}
-
-	if err := settings.SearchSettings.Validate(); err != nil {
 		return nil, err
 	}
 

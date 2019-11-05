@@ -87,3 +87,7 @@ func DisplayResults(w http.ResponseWriter, results *ResultContext) {
 func DisplayResult(w http.ResponseWriter, result *ItemContext) {
 	templates.ExecuteTemplate(w, "result", result)
 }
+
+func DisplayExport(w http.ResponseWriter, context interface{}) {
+	templates.ExecuteTemplate(w, "export", context)
+}
