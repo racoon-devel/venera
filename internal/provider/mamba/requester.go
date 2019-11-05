@@ -186,7 +186,7 @@ func (m *mambaRequester) Search(ageFrom uint, ageTo uint, city int, offset int) 
 		if err := mapstructure.Decode(response.Users[i], &user); err != nil {
 			continue
 		}
-		
+
 		mapstructure.Decode(user.Type, &user.TypeDetail)
 		users = append(users, user)
 	}

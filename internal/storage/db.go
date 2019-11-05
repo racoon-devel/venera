@@ -37,8 +37,8 @@ func UpdateTask(task *types.TaskRecord) {
 }
 
 func DeleteTask(task *types.TaskRecord) {
-	db.Delete(&types.PersonRecord{}, "task_id = ?", task.ID)
-	db.Delete(task)
+	db.Unscoped().Delete(&types.PersonRecord{}, "task_id = ?", task.ID)
+	db.Unscoped().Delete(task)
 }
 
 func AppendPerson(person *types.Person, taskID uint, provider string) (uint, error) {
