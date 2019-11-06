@@ -45,6 +45,9 @@ func StatusToHumanReadable(status types.SessionStatus) string {
 	case types.StatusError:
 		return "Error"
 
+	case types.StatusDone:
+		return "Done"
+
 	default:
 		return "Unknown"
 	}

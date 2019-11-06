@@ -1,0 +1,34 @@
+{{ define "edit.export" }}
+    {{ template "header" 4 }}
+    <table>
+        <tr>
+            <td colspan="2">
+                {{ $.FileName }}
+            </td>
+        </tr>
+        <tr>
+            <td width="150"><b>Progress</b></td>
+            <td>{{ $.Stat.Progress}} %</td>
+        </tr>
+        <tr>
+            <td><b>Retrieved</b></td>
+            <td>{{ $.Stat.Retrieved}}</td>
+        </tr>
+        <tr>
+            <td><b>Errors</b></td>
+            <td>{{ $.Stat.Errors}}</td>
+        </tr>
+        <tr>
+            <td><b>Processed</b></td>
+            <td>{{ $.Stat.Errors}} Mb</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                {{ if eq $.Ready true }}
+                <a class="button button-small" href="{{ $.Url }}">Download</a>
+                {{ end }}
+            </td>
+        </tr>
+    </table>
+    {{ template "footer" }}
+{{ end }}

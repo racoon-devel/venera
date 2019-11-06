@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"racoondev.tk/gitea/racoon/venera/internal/provider/export"
 
 	"github.com/ccding/go-logging/logging"
 
@@ -14,6 +15,7 @@ var (
 	providers = map[string]types.Provider{
 		"tinder": new(tinder.TinderProvider),
 		"mamba":  new(mamba.MambaProvider),
+		"export": new(export.ExportProvider),
 	}
 )
 

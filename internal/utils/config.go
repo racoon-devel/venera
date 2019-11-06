@@ -22,8 +22,9 @@ type dbEntry struct {
 	Database string
 }
 
-type otherEntry struct {
+type directoriesEntry struct {
 	Content string
+	Downloads string
 }
 
 type telegramEntry struct {
@@ -40,11 +41,11 @@ type proxyEntry struct {
 }
 
 type Config struct {
-	Http     httpEntry
-	Database dbEntry
-	Other    otherEntry
-	Telegram telegramEntry
-	Proxy    proxyEntry
+	Http        httpEntry
+	Database    dbEntry
+	Directories directoriesEntry
+	Telegram    telegramEntry
+	Proxy       proxyEntry
 }
 
 var Configuration Config
