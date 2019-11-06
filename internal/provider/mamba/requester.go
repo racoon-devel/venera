@@ -138,7 +138,7 @@ type mambaUser struct {
 		Marital  string
 		Children string
 	}
-	Type struct {
+	TypeDetail struct {
 		Height       int
 		Weight       int
 		Circumstance string
@@ -149,18 +149,20 @@ type mambaUser struct {
 		Language     []string
 		Race         string
 		Orientation  string
-	}
+	} `mapstructure:"-"`
+	Type interface{}
 	Interests []string
 }
 
 type searchResponse struct {
 	Total int
 	Limit int
-	Users []mambaUser
+	Users []interface{}
 }
 
 func (m *mambaRequester) Search(ageFrom uint, ageTo uint, city int, offset int) ([]mambaUser, error) {
 	args := make(methodArgs)
+	users := make([]mambaUser, 0)
 
 	args["iam"] = "M"
 	args["look_for"] = "F"
@@ -179,7 +181,17 @@ func (m *mambaRequester) Search(ageFrom uint, ageTo uint, city int, offset int) 
 		return nil, err
 	}
 
-	return response.Users, nil
+	for i := range response.Users {
+		user := mambaUser{}
+		if err := mapstructure.Decode(response.Users[i], &user); err != nil {
+			continue
+		}
+
+		mapstructure.Decode(user.Type, &user.TypeDetail)
+		users = append(users, user)
+	}
+
+	return users, nil
 }
 
 func (m *mambaRequester) GetPhotos(oid int) ([]string, error) {

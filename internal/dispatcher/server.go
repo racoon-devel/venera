@@ -21,6 +21,11 @@ var log *logging.Logger
 
 type taskItemHandler func(taskId uint) error
 
+type mainContext struct {
+	Providers []string
+	Tasks     []TaskInfo
+}
+
 func setupAccessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Infof("[%s] %s %s", r.Method, r.RemoteAddr, r.URL.Path)
@@ -172,9 +177,23 @@ func runTaskHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-type mainContext struct {
-	Providers []string
-	Tasks     []TaskInfo
+func exportHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		provider := provider.All()["export"]
+		session, err := provider.CreateSearchSession(r)
+		if err != nil {
+			webui.DisplayError(w, err)
+			return
+		}
+
+		AppendTask(session, provider.ID())
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
+	var ctx mainContext
+	ctx.Providers = provider.GetAvailable()
+	ctx.Tasks = Describe()
+	webui.DisplayExport(w, &ctx)
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
@@ -209,8 +228,9 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	router.HandleFunc("/task/pause/{task}", suspendTaskHandler).Methods("GET")
 	router.HandleFunc("/task/run/{task}", runTaskHandler).Methods("GET")
 	router.HandleFunc("/task/{task}/{action}", actionTaskHandler).Methods("GET")
+	router.HandleFunc("/export", exportHandler).Methods("GET", "POST")
 
-	router.PathPrefix("/ui/").Handler(http.StripPrefix("/ui/", http.FileServer(http.Dir(utils.Configuration.Other.Content+"/web/"))))
+	router.PathPrefix("/ui/").Handler(http.StripPrefix("/ui/", http.FileServer(http.Dir(utils.Configuration.Directories.Content+"/web/"))))
 	router.Use(setupAccessLog)
 	router.Use(setupAccess)
 	router.Use(setupPanicHandler)

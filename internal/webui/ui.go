@@ -33,8 +33,8 @@ type ResultContext struct {
 
 func LoadTemplates() error {
 	var tmplFiles []string
-	dir := utils.Configuration.Other.Content + "/templates"
-	files, err := ioutil.ReadDir(utils.Configuration.Other.Content + "/templates")
+	dir := utils.Configuration.Directories.Content + "/templates"
+	files, err := ioutil.ReadDir(utils.Configuration.Directories.Content + "/templates")
 	if err != nil {
 		return err
 	}
@@ -86,4 +86,8 @@ func DisplayResults(w http.ResponseWriter, results *ResultContext) {
 
 func DisplayResult(w http.ResponseWriter, result *ItemContext) {
 	templates.ExecuteTemplate(w, "result", result)
+}
+
+func DisplayExport(w http.ResponseWriter, context interface{}) {
+	templates.ExecuteTemplate(w, "export", context)
 }

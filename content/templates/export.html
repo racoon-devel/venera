@@ -1,0 +1,45 @@
+{{ define "export" }}
+    {{ template "header" 4 }}
+    <form action="/export" method="POST">
+        <table>
+            <tr>
+                <td width="150">Task</td>
+                <td>
+                    <select name="task">
+                        <option value="">All</option>
+                        {{range $i, $task := $.Tasks}}
+                            <option value="{{ $task.ID }}">Task #{{ $task.ID }} [ {{ $task.Provider }} ]</option>
+                        {{- end}}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="checkbox" name="favourite">
+                    <label for="favourite">Favourite</label>
+                </td>
+                <td>
+                    <input type="checkbox" name="photos" checked>
+                    <label for="photos">Photos</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="checkbox" name="about" checked>
+                    <label for="about">About</label>
+                </td>
+                <td>
+                    <input type="checkbox" name="dump" checked>
+                    <label for="dump">JSON Dump</label>
+                </td>
+            </tr>
+
+            <tr>
+                <td valign="bottom" colspan="2">
+                    <button type="submit">Export</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+    {{ template "footer" }}
+{{ end }}
