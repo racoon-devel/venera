@@ -15,6 +15,7 @@ const (
 	StatusRunning
 	StatusStopped
 	StatusError
+	StatusDone
 )
 
 // SearchSession - search session of some provider

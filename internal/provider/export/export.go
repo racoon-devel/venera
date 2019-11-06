@@ -1,11 +1,14 @@
 package export
 
 import (
+	"fmt"
 	"net/http"
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 
 	"github.com/ccding/go-logging/logging"
 	"github.com/gorilla/mux"
 
+	uuid "github.com/satori/go.uuid"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 )
 
@@ -23,7 +26,10 @@ type ExportProvider struct {
 }
 
 func (provider ExportProvider) newSession(search *searchSettings) *exportSession {
-	return &exportSession{state: exportState{Search: *search},
+	// Generate target filename
+	uid, _ := uuid.NewV4()
+	fileName := fmt.Sprintf("%s/%s.tar", utils.Configuration.Directories.Downloads, uid.String())
+	return &exportSession{state: exportState{Search: *search, FileName: fileName},
 		log: provider.log, provider: provider}
 }
 
@@ -32,6 +38,11 @@ func (provider ExportProvider) ID() string {
 }
 
 func (provider ExportProvider) SetupRouter(router *mux.Router) {
+	router.PathPrefix("/download/").Handler(
+		http.StripPrefix("/export/download/",
+			http.FileServer(http.Dir(utils.Configuration.Directories.Downloads+"/")),
+		),
+	)
 }
 
 func (provider *ExportProvider) SetLogger(log *logging.Logger) {

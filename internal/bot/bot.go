@@ -55,6 +55,7 @@ func Initialize(ctx context.Context, logger *logging.Logger, wg *sync.WaitGroup,
 	bot.api, err = tgbotapi.NewBotAPIWithClient(APIToken, utils.GetHTTPClient())
 
 	if err != nil {
+		return nil
 		return fmt.Errorf("Create Telegram API instance failed: %+v", err)
 	}
 

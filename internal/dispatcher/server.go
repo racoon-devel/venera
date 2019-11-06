@@ -230,7 +230,7 @@ func InstanceRouter(logger *logging.Logger) http.Handler {
 	router.HandleFunc("/task/{task}/{action}", actionTaskHandler).Methods("GET")
 	router.HandleFunc("/export", exportHandler).Methods("GET", "POST")
 
-	router.PathPrefix("/ui/").Handler(http.StripPrefix("/ui/", http.FileServer(http.Dir(utils.Configuration.Other.Content+"/web/"))))
+	router.PathPrefix("/ui/").Handler(http.StripPrefix("/ui/", http.FileServer(http.Dir(utils.Configuration.Directories.Content+"/web/"))))
 	router.Use(setupAccessLog)
 	router.Use(setupAccess)
 	router.Use(setupPanicHandler)

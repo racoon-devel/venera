@@ -34,7 +34,7 @@ type defaultRater struct {
 func (r *defaultRater) Init(log *logging.Logger, settings *types.SearchSettings) {
 	r.settings = settings
 	var err error
-	r.detector, err = utils.NewFaceDetector(utils.Configuration.Other.Content + "/cascade/facefinder")
+	r.detector, err = utils.NewFaceDetector(utils.Configuration.Directories.Content + "/cascade/facefinder")
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +44,7 @@ func (r *defaultRater) Init(log *logging.Logger, settings *types.SearchSettings)
 		panic(err)
 	}
 
-	path := fmt.Sprintf("%s/configurations/default.%s.conf", utils.Configuration.Other.Content, r.configName)
+	path := fmt.Sprintf("%s/configurations/default.%s.conf", utils.Configuration.Directories.Content, r.configName)
 	_, err = toml.DecodeFile(path, &r.config)
 	if err != nil {
 		panic(err)

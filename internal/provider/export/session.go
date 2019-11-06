@@ -1,13 +1,18 @@
 package export
 
 import (
+	"archive/tar"
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
+	"os"
+	"path"
 	"sync"
 	"sync/atomic"
+
 
 	"github.com/ccding/go-logging/logging"
 
@@ -23,9 +28,10 @@ type exportStat struct {
 }
 
 type exportState struct {
-	Search searchSettings
-	Stat   exportStat
-	Offset uint
+	Search   searchSettings
+	Stat     exportStat
+	Offset   uint
+	FileName string
 }
 
 type exportSession struct {
@@ -40,6 +46,7 @@ type exportSession struct {
 	log      *logging.Logger
 
 	total uint
+	tw    *tar.Writer
 }
 
 func (session *exportSession) SaveState() string {
@@ -72,6 +79,8 @@ func (session *exportSession) Reset() {
 
 	session.state.Offset = 0
 	session.total = 0
+
+	os.Remove(session.state.FileName)
 }
 
 func (session *exportSession) Status() types.SessionStatus {
@@ -107,8 +116,24 @@ func (session *exportSession) Poll() {
 }
 
 func (session *exportSession) Update(w http.ResponseWriter, r *http.Request) (bool, error) {
-	// TODO: display progress and download link
-	webui.DisplayEditTask(w, "export", nil)
+	var ctx struct {
+		Stat exportStat
+		FileName string
+		Url template.URL
+		Ready bool
+	}
+
+	ctx.Stat = session.state.Stat
+	ctx.Stat.Processed = ctx.Stat.Processed / (1024 * 1024)
+
+	_, ctx.FileName = path.Split(session.state.FileName)
+	ctx.Url = template.URL(fmt.Sprintf("/export/download/%s", ctx.FileName))
+
+	session.mutex.Lock()
+	ctx.Ready = session.status == types.StatusDone
+	session.mutex.Unlock()
+
+	webui.DisplayEditTask(w, "export", &ctx)
 
 	return false, nil
 }

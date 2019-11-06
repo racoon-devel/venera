@@ -33,8 +33,8 @@ type ResultContext struct {
 
 func LoadTemplates() error {
 	var tmplFiles []string
-	dir := utils.Configuration.Other.Content + "/templates"
-	files, err := ioutil.ReadDir(utils.Configuration.Other.Content + "/templates")
+	dir := utils.Configuration.Directories.Content + "/templates"
+	files, err := ioutil.ReadDir(utils.Configuration.Directories.Content + "/templates")
 	if err != nil {
 		return err
 	}
