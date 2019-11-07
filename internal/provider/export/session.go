@@ -124,7 +124,7 @@ func (session *exportSession) Update(w http.ResponseWriter, r *http.Request) (bo
 	}
 
 	ctx.Stat = session.state.Stat
-	ctx.Stat.Processed = ctx.Stat.Processed / (1024 * 1024)
+	ctx.Stat.Processed = uint32(float32(ctx.Stat.Processed) / (1024. * 1024.))
 
 	_, ctx.FileName = path.Split(session.state.FileName)
 	ctx.Url = template.URL(fmt.Sprintf("/export/download/%s", ctx.FileName))
@@ -144,9 +144,9 @@ func (session *exportSession) Action(action string, params url.Values) error {
 
 func (session *exportSession) GetStat() map[string]uint32 {
 	stat := make(map[string]uint32)
-	stat["Retrieved"] = atomic.SwapUint32(&session.state.Stat.Retrieved, 0)
+	stat["Retrieved"] = atomic.LoadUint32(&session.state.Stat.Retrieved)
 	stat["Errors"] = atomic.SwapUint32(&session.state.Stat.Errors, 0)
-	stat["Processed"] = atomic.SwapUint32(&session.state.Stat.Processed, 0)
+	stat["Processed"] = atomic.LoadUint32(&session.state.Stat.Processed)
 	stat["Progress"] = atomic.LoadUint32(&session.state.Stat.Progress)
 
 	return stat
