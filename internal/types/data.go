@@ -25,6 +25,7 @@ type SearchSettings struct {
 	Keywords []string
 	Likes    []string
 	Dislikes []string
+	Rater    string
 }
 
 const (

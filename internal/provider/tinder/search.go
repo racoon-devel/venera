@@ -128,7 +128,8 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 	session.mutex.Lock()
 	session.status = types.StatusRunning
 
-	session.rater = rater.NewRater("default", "tinder", session.log, &session.state.Search.SearchSettings)
+	session.rater = rater.NewRater(session.state.Search.Rater, "tinder", session.log, &session.state.Search.SearchSettings)
+	defer session.rater.Close()
 
 	if session.top == nil {
 		session.top = newTopList(maxSuperLikes)
@@ -186,7 +187,9 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 		session.log.Debugf("Rate person '%s'...", record.Name)
 		session.log.Debugf("Ping time: %s", record.PingTime.Format("Mon Jan _2 15:04:05 2006"))
 		person := convertPersonRecord(&record)
-		rating := session.rater.Rate(&person)
+		rating, extra := session.rater.Rate(&person)
+		rating += extra
+		person.Rating = rating
 
 		if person.Bio != "" {
 			session.log.Debug(person.Bio)

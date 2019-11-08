@@ -98,6 +98,14 @@
   version = "v1.1.2"
 
 [[projects]]
+  digest = "1:0dcdc1a94f2f2b0ca169176e8344bab0f74ecfefd7a51957a88a789bbd683112"
+  name = "github.com/oliamb/cutter"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "de2952ec22155c8e68bf4ac03684b1d1d734b53c"
+  version = "v0.2.2"
+
+[[projects]]
   digest = "1:7c56e4e9c4d34167c30636d4b22ac2316d74ce1d14a78bc7a828f03603d410f3"
   name = "github.com/parnurzeal/gorequest"
   packages = ["."]
@@ -138,6 +146,25 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:077fda3d91ee1828619d3c6034b455d867d4cf95f82fb41903f6eaf7b434b3bd"
+  name = "github.com/tensorflow/tensorflow"
+  packages = [
+    "tensorflow/go",
+    "tensorflow/go/op",
+  ]
+  pruneopts = "UT"
+  revision = "64c3d382cadf7bbe8e7e99884bede8284ff67f56"
+  version = "v2.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:94db3c4e31e3144080003ac21bdd0f6d5c05f466da7e634e101ba0e12943f5d3"
+  name = "golang.org/x/image"
+  packages = ["bmp"]
+  pruneopts = "UT"
+  revision = "e7c1f5e7dbb87d8921928a6d9fc52fb31ce73b24"
+
+[[projects]]
   branch = "master"
   digest = "1:b1291957e6bd4eee4687152a2bb93963cbec296aba40c957e6012c94358eee44"
   name = "golang.org/x/net"
@@ -148,7 +175,7 @@
     "publicsuffix",
   ]
   pruneopts = "UT"
-  revision = "a882066a44e04a21d46e51451c71e131344e830e"
+  revision = "380dde419d290c41960e262a7fbcbc059d70c4e3"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -195,9 +222,13 @@
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/postgres",
     "github.com/mitchellh/mapstructure",
+    "github.com/oliamb/cutter",
     "github.com/parnurzeal/gorequest",
     "github.com/phf/go-queue/queue",
     "github.com/satori/go.uuid",
+    "github.com/tensorflow/tensorflow/tensorflow/go",
+    "github.com/tensorflow/tensorflow/tensorflow/go/op",
+    "golang.org/x/image/bmp",
     "golang.org/x/net/proxy",
   ]
   solver-name = "gps-cdcl"
