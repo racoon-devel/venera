@@ -186,7 +186,9 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 		session.log.Debugf("Rate person '%s'...", record.Name)
 		session.log.Debugf("Ping time: %s", record.PingTime.Format("Mon Jan _2 15:04:05 2006"))
 		person := convertPersonRecord(&record)
-		rating := session.rater.Rate(&person)
+		rating, extra := session.rater.Rate(&person)
+		rating += extra
+		person.Rating = rating
 
 		if person.Bio != "" {
 			session.log.Debug(person.Bio)

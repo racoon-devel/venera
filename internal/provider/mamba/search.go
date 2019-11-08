@@ -26,7 +26,7 @@ func (session *mambaSearchSession) process(ctx context.Context) {
 	session.mutex.Lock()
 	session.status = types.StatusRunning
 	session.api = newMambaRequester(mambaAppID, mambaSecretKey)
-	session.rater = rater.NewRater("default", "mamba", session.log, &session.state.Search.SearchSettings)
+	session.rater = rater.NewRater("default+ml", "mamba", session.log, &session.state.Search.SearchSettings)
 	session.mutex.Unlock()
 
 	session.lookForExp = regexp.MustCompile(`с парнем в возрасте ([\d]+) - ([\d]+) лет`)
@@ -91,12 +91,16 @@ func (session *mambaSearchSession) processUser(ctx context.Context, user *mambaU
 	}
 
 	person := convertPersonRecord(user, photos, visitTime[0])
-	session.rater.Rate(&person)
+	rating, extra := session.rater.Rate(&person)
+	rating += extra
+	person.Rating = rating
+
+	// TODO: optimization
 	if !session.checkLookFor(user.Familiarity.LookFor) {
 		person.Rating = rater.IgnorePerson
 	}
 
-	rating := person.Rating
+	rating = person.Rating
 
 	session.log.Debugf("Person '%s' [oid = %d, photos = %d, visited = %s] fetched: %d", user.Info.Name, user.Info.Oid,
 		len(photos), visitTime[0].Format("2006-01-02T15:04:05-0700"), rating)

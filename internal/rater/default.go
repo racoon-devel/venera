@@ -16,7 +16,7 @@ type defaultConfig struct {
 
 	VIPAccountWeight int
 	BioMatchWeight   int
-	BioPresentWeight  int
+	BioPresentWeight int
 
 	AlcoFactor  int
 	SmokeFactor int
@@ -29,9 +29,12 @@ type defaultRater struct {
 	processor  *utils.TextProcessor
 	detector   *utils.FaceDetector
 	config     defaultConfig
+	log        *logging.Logger
+	nextRater  types.Rater
 }
 
 func (r *defaultRater) Init(log *logging.Logger, settings *types.SearchSettings) {
+	r.log = log
 	r.settings = settings
 	var err error
 	r.detector, err = utils.NewFaceDetector(utils.Configuration.Directories.Content + "/cascade/facefinder")
@@ -68,24 +71,24 @@ func (r *defaultRater) hasPhoto(photos []string) bool {
 }
 
 // <0 - dislike, =0 random, >1 - like and save
-func (r *defaultRater) Rate(person *types.Person) int {
+func (r *defaultRater) Rate(person *types.Person) (int, int) {
 	var rating int
 
 	if person.Photo == nil || len(person.Photo) == 0 || person.Body == types.Fat {
 		person.Rating = IgnorePerson
-		return person.Rating
+		return person.Rating, 0
 	}
 
 	if !r.hasPhoto(person.Photo) {
 		person.Rating = IgnorePerson
-		return person.Rating
+		return person.Rating, 0
 	}
 
 	if !person.VisitTime.IsZero() {
 		distance := time.Now().Sub(person.VisitTime)
 		if distance.Hours()/24 > float64(r.config.RelevantDays) {
 			person.Rating = IgnorePerson
-			return person.Rating
+			return person.Rating, 0
 		}
 	}
 
@@ -108,5 +111,11 @@ func (r *defaultRater) Rate(person *types.Person) int {
 	rating += person.Body * r.config.BodyFactor
 
 	person.Rating = rating
-	return rating
+	r.log.Debugf("default rating = %d", rating)
+	return passNext(r.nextRater, person, rating)
+}
+
+func (r *defaultRater) Next(nextRater types.Rater) types.Rater {
+	r.nextRater = nextRater
+	return nextRater
 }
