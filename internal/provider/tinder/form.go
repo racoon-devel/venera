@@ -69,6 +69,10 @@ func parseForm(r *http.Request, editMode bool) (*searchSettings, *tinderAuth, er
 		return nil, nil, fmt.Errorf("Field 'latitude' must be not empty")
 	}
 
+	if len(r.Form["rater"]) != 1 || len(r.Form["rater"][0]) == 0 {
+		return nil, nil, fmt.Errorf("Field 'rater' must be not empty")
+	}
+
 	u, err := strconv.ParseUint(r.Form["ageFrom"][0], 10, 64)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Field 'ageFrom' must be integer")
@@ -96,6 +100,8 @@ func parseForm(r *http.Request, editMode bool) (*searchSettings, *tinderAuth, er
 	}
 
 	ctx.Longitude = float32(f)
+
+	ctx.Rater = r.Form["rater"][0]
 
 	return &ctx, auth, nil
 }

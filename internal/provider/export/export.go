@@ -27,7 +27,7 @@ type ExportProvider struct {
 
 func (provider ExportProvider) newSession(search *searchSettings) *exportSession {
 	// Generate target filename
-	uid, _ := uuid.NewV4()
+	uid := uuid.NewV4()
 	fileName := fmt.Sprintf("%s/%s.tar", utils.Configuration.Directories.Downloads, uid.String())
 	return &exportSession{state: exportState{Search: *search, FileName: fileName},
 		log: provider.log, provider: provider}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"racoondev.tk/gitea/racoon/venera/internal/rater"
 	"strconv"
 	"strings"
 	"sync"
@@ -80,7 +81,7 @@ func newTaskHandler(w http.ResponseWriter, r *http.Request) {
 		AppendTask(session, providerId)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else {
-		webui.DisplayNewTask(w, providerId)
+		webui.DisplayNewTask(w, providerId, &webui.CreateContext{Raters: rater.GetRaters()})
 	}
 }
 

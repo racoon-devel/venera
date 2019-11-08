@@ -31,6 +31,10 @@ type ResultContext struct {
 	Rating     uint
 }
 
+type CreateContext struct {
+	Raters []string
+}
+
 func LoadTemplates() error {
 	var tmplFiles []string
 	dir := utils.Configuration.Directories.Content + "/templates"
@@ -71,8 +75,8 @@ func DisplayError(w http.ResponseWriter, err error) {
 	templates.ExecuteTemplate(w, "error", err)
 }
 
-func DisplayNewTask(w http.ResponseWriter, provider string) {
-	templates.ExecuteTemplate(w, "new."+provider, nil)
+func DisplayNewTask(w http.ResponseWriter, provider string, context *CreateContext) {
+	templates.ExecuteTemplate(w, "new."+provider, context)
 }
 
 func DisplayEditTask(w http.ResponseWriter, provider string, context interface{}) {
