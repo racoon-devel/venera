@@ -89,11 +89,15 @@ func (r *mlRater) Rate(person *types.Person) (int, int) {
 	}
 
 	person.Rating = rating
-	r.log.Debugf("ml rating = %d", rating)
 	return passNext(r.nextRater, person, rating)
 }
 
 func (r *mlRater) Next(nextRater types.Rater) types.Rater {
 	r.nextRater = nextRater
 	return nextRater
+}
+
+func (r *mlRater) Close() {
+	r.c.Close()
+	propagateClose(r.nextRater)
 }

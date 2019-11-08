@@ -128,7 +128,8 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 	session.mutex.Lock()
 	session.status = types.StatusRunning
 
-	session.rater = rater.NewRater("default", "tinder", session.log, &session.state.Search.SearchSettings)
+	session.rater = rater.NewRater(session.state.Search.Rater, "tinder", session.log, &session.state.Search.SearchSettings)
+	defer session.rater.Close()
 
 	if session.top == nil {
 		session.top = newTopList(maxSuperLikes)

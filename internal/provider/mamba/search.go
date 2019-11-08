@@ -26,8 +26,10 @@ func (session *mambaSearchSession) process(ctx context.Context) {
 	session.mutex.Lock()
 	session.status = types.StatusRunning
 	session.api = newMambaRequester(mambaAppID, mambaSecretKey)
-	session.rater = rater.NewRater("default+ml", "mamba", session.log, &session.state.Search.SearchSettings)
+	session.rater = rater.NewRater(session.state.Search.Rater, "mamba", session.log, &session.state.Search.SearchSettings)
 	session.mutex.Unlock()
+
+	defer session.rater.Close()
 
 	session.lookForExp = regexp.MustCompile(`с парнем в возрасте ([\d]+) - ([\d]+) лет`)
 

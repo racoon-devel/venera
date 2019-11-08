@@ -42,6 +42,10 @@ func parseForm(r *http.Request, editMode bool) (*searchSettings, error) {
 		return nil, fmt.Errorf("Field 'city' must be not empty")
 	}
 
+	if len(r.Form["rater"]) != 1 || len(r.Form["rater"][0]) == 0 {
+		return nil, fmt.Errorf("Field 'rater' must be not empty")
+	}
+
 	u, err := strconv.ParseUint(r.Form["ageFrom"][0], 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("Field 'ageFrom' must be integer")
@@ -57,6 +61,7 @@ func parseForm(r *http.Request, editMode bool) (*searchSettings, error) {
 	ctx.AgeTo = uint(u)
 
 	ctx.City = r.Form["city"][0]
+	ctx.Rater = r.Form["rater"][0]
 
 	return &ctx, nil
 }

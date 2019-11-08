@@ -16,3 +16,9 @@ func passNext(next types.Rater, person *types.Person, rating int) (int, int) {
 
 	return rating, extra
 }
+
+func propagateClose(next types.Rater) {
+	if next != nil {
+		next.Close()
+	}
+}

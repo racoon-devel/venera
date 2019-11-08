@@ -51,4 +51,5 @@ type Rater interface {
 	Init(log *logging.Logger, settings *SearchSettings)
 	Rate(person *Person) (int,int)
 	Next(nextRater Rater) Rater
+	Close()
 }

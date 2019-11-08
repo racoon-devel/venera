@@ -11,6 +11,16 @@
                 <td><input type="text" name="city" value=""></td>
             </tr>
             <tr>
+                <td>Rater</td>
+                <td>
+                    <select name="rater">
+                        {{range $i, $rater := $.Raters}}
+                            <option value="{{ $rater }}" {{ if eq $i 0 }} selected {{ end }}>{{ $rater }}</option>
+                        {{- end}}
+                    </select>
+                </td>
+            </tr>
+            <tr>
                 <td colspan="2"> Likes<textarea name="likes" rows="5" cols="100"></textarea></td>
             </tr>
             <tr>

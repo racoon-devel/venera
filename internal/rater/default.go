@@ -111,11 +111,14 @@ func (r *defaultRater) Rate(person *types.Person) (int, int) {
 	rating += person.Body * r.config.BodyFactor
 
 	person.Rating = rating
-	r.log.Debugf("default rating = %d", rating)
 	return passNext(r.nextRater, person, rating)
 }
 
 func (r *defaultRater) Next(nextRater types.Rater) types.Rater {
 	r.nextRater = nextRater
 	return nextRater
+}
+
+func (r *defaultRater) Close() {
+	propagateClose(r.nextRater)
 }
