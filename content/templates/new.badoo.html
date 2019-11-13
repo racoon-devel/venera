@@ -1,0 +1,43 @@
+{{ define "new.badoo" }}
+    {{ template "header" 4 }}
+    <form action="/task/new/badoo" method="POST" id="task-form">
+        <table>
+            <tr>
+                <td>Email</td>
+                <td><input type="text" name="email" value=""></td>
+            </tr>
+            <tr>
+                <td>Password</td>
+                <td><input type="password" name="password" value=""></td>
+            </tr>
+            <tr>
+                <td>Rater</td>
+                <td>
+                    <select name="rater">
+                        {{range $i, $rater := $.Raters}}
+                            <option value="{{ $rater }}" {{ if eq $i 0 }} selected {{ end }}>{{ $rater }}</option>
+                        {{- end}}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Latitude</td>
+                <td><input type="text" name="latitude" value="55.741676"></td>
+            </tr>
+            <tr>
+                <td>Longitude</td>
+                <td><input type="text" name="longitude" value="37.624928"></td>
+            </tr>
+            <tr>
+                <td colspan="2"> Likes<textarea name="likes" rows="5" cols="100"></textarea></td>
+            </tr>
+            <tr>
+                <td colspan="2"> Dislikes<textarea name="dislikes" rows="5" cols="100"></textarea></td>
+            </tr>
+            <tr>
+                <td colspan="2"><input type="submit" value="Submit"></td>
+            </tr>
+        </table>
+    </form>
+    {{ template "footer" }}
+{{ end }}
