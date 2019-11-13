@@ -9,4 +9,6 @@ type BadooUser struct {
 	Photos    []string
 	Info      string
 	Interests string
+	ID        string
+	URL       string
 }

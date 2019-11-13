@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sync"
 	"sync/atomic"
+
+	"racoondev.tk/gitea/racoon/venera/internal/provider/badoo/badoogo"
 
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 
@@ -39,7 +42,14 @@ type badooSearchSession struct {
 	provider BadooProvider
 	taskID   uint
 	log      *logging.Logger
+	browser  *badoogo.BadooRequester
+	liker    *badoogo.BadooRequester
+	walker   *badoogo.BadooRequester
 	rater    types.Rater
+
+	alcoExpr  *regexp.Regexp
+	smokeExpr *regexp.Regexp
+	bodyExpr  *regexp.Regexp
 }
 
 func (session *badooSearchSession) SaveState() string {

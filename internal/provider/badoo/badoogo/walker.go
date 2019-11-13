@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chromedp/chromedp"
@@ -167,6 +168,12 @@ func (badoo *BadooRequester) FetchProfile(url string) (*BadooUser, error) {
 	val, _ := strconv.ParseInt(badoo.ageExpr.FindString(age), 10, 8)
 	user.Age = int(val)
 
+	matches := badoo.idExpr.FindStringSubmatch(url)
+	if len(matches) >= 2 {
+		user.URL = matches[0]
+		user.ID = matches[1]
+	}
+
 	return user, err
 }
 
@@ -220,6 +227,8 @@ func extractPhotos(badoo *BadooRequester, user *BadooUser) chromedp.ActionFunc {
 			} else {
 				break
 			}
+
+			url = strings.Trim(url, `"`)
 
 			user.Photos = append(user.Photos, url)
 

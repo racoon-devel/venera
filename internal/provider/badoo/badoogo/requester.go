@@ -41,6 +41,7 @@ type BadooRequester struct {
 	log       *logging.Logger
 	ageExpr   *regexp.Regexp
 	urlExpr   *regexp.Regexp
+	idExpr    *regexp.Regexp
 	debugMode bool
 }
 
@@ -59,5 +60,6 @@ func newRequester(log *logging.Logger) *BadooRequester {
 		log:     log,
 		ageExpr: regexp.MustCompile(`[\d]+`),
 		urlExpr: regexp.MustCompile(`url\(([^)]+)`),
+		idExpr:  regexp.MustCompile(`https://badoo.com/profile/(\d+)`),
 	}
 }
