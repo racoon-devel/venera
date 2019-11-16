@@ -7,14 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
-
 	"racoondev.tk/gitea/racoon/venera/internal/provider/badoo/badoogo"
-
 	"racoondev.tk/gitea/racoon/venera/internal/rater"
+	"racoondev.tk/gitea/racoon/venera/internal/storage"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 )
 
 const (
@@ -27,8 +24,8 @@ const (
 	minSessionInterval = 1 * time.Hour
 	maxSessionInterval = 2 * time.Hour
 
-	datingDuration  = 1 * time.Minute
-	walkingDuration = 1 * time.Minute
+	datingDuration  = 30 * time.Minute
+	walkingDuration = 20 * time.Minute
 )
 
 func (session *badooSearchSession) process(ctx context.Context) {
@@ -149,6 +146,8 @@ func (session *badooSearchSession) processWalking(ctx context.Context) {
 				}
 			}
 
+			utils.Delay(ctx, utils.Range{Min: minProfileDelay, Max: maxProfileDelay})
+
 			if rating >= rater.SuperLikeThreshold {
 				session.log.Debugf("Like '%s'", person.Name)
 				return badoogo.ActionLike
@@ -227,7 +226,6 @@ func (session *badooSearchSession) convertPersonRecord(record *badoogo.BadooUser
 
 	person.UserID = record.ID
 	person.Link = record.URL
-
 
 	return person
 }
