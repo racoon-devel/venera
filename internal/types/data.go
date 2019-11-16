@@ -84,8 +84,10 @@ func (self SearchSettings) Validate() error {
 		return err
 	}
 
-	if self.AgeTo < self.AgeFrom || self.AgeFrom < 18 || self.AgeTo < 18 {
-		return fmt.Errorf("Invalid age: %d - %d", self.AgeFrom, self.AgeTo)
+	if self.AgeTo != 0 && self.AgeFrom != 0 {
+		if self.AgeTo < self.AgeFrom || self.AgeFrom < 18 || self.AgeTo < 18 {
+			return fmt.Errorf("Invalid age: %d - %d", self.AgeFrom, self.AgeTo)
+		}
 	}
 
 	return nil

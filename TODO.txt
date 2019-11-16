@@ -1,2 +1,2 @@
-2) Badoo провайдер
+2) Badoo провайдер: geolocation, captcha?
 6) VK провайдер
