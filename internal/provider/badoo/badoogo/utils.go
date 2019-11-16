@@ -15,7 +15,7 @@ type pageDownloader struct {
 
 func (badoo *BadooRequester) TakeScreenshot(fileName string) error {
 	var raw []byte
-	if err := badoo.run(chromedp.Screenshot(`#page > div.page__wrap`, &raw)); err != nil {
+	if err := badoo.run(badoo.wrap("take screenshot", chromedp.Screenshot(`#page > div.page__wrap`, &raw))); err != nil {
 		return err
 	}
 

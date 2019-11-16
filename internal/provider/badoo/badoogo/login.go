@@ -4,17 +4,20 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/cdproto/emulation"
-
 	"github.com/chromedp/chromedp"
 )
 
-func (badoo *BadooRequester) Login(email, password string) error {
+func (badoo *BadooRequester) Login(email, password string, lat, lon float32) error {
 
 	err := badoo.run(
 		chromedp.EmulateViewport(1920, 1024),
-		badoo.wrap("set geo", emulation.SetGeolocationOverride().WithLatitude(44.786568).WithLongitude(20.448921)),
-		badoo.wrap("go to login page", chromedp.Navigate("https://badoo.com/ru/signin/?f=top")),
+		badoo.wrap("set geo", emulation.SetGeolocationOverride().
+			WithLatitude(float64(lat)).WithLongitude(float64(lon))),
+		badoo.wrap("set permissions", browser.SetPermission("https://badoo.com:443", &browser.PermissionDescriptor{Name: "geolocation"}, "granted")),
+		badoo.wrap("grant geo", browser.GrantPermissions("https://badoo.com:443", []browser.PermissionType{"geolocation"})),
+		badoo.wrap("go to login page", chromedp.Navigate("https://badoo.com/en/signin/?f=top")),
 		badoo.wrap("wait email field", chromedp.WaitVisible(`//input[@name="email"]`)),
 		badoo.wrap("wait login field", chromedp.WaitVisible(`//input[@name="password"]`)),
 		badoo.wrap("wait", chromedp.Sleep(time.Second*3)),

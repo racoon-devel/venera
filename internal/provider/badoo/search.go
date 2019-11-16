@@ -45,7 +45,10 @@ func (session *badooSearchSession) process(ctx context.Context) {
 	defer session.rater.Close()
 
 	err := session.repeat(ctx, func() error {
-		err := session.browser.Login(session.state.Search.Email, session.state.Search.Password)
+		err := session.browser.Login(session.state.Search.Email,
+			session.state.Search.Password,
+			session.state.Search.Latitude,
+			session.state.Search.Longitude)
 		session.browser = session.handleError(ctx, session.browser, err)
 		return err
 	})
@@ -135,6 +138,7 @@ func (session *badooSearchSession) processWalking(ctx context.Context) {
 	for time.Now().Sub(now) < walkingDuration {
 		err := session.walker.WalkAround(func(user *badoogo.BadooUser) int {
 			person := session.convertPersonRecord(user)
+
 			session.log.Debugf("Person fetched: %+v", &person)
 			rating, extra := session.rater.Rate(&person)
 			rating += extra
