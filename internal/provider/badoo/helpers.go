@@ -28,10 +28,14 @@ func (session *badooSearchSession) raise(err error) {
 	session.lastError = err
 }
 
-func (session *badooSearchSession) unexpected(browser *badoogo.BadooRequester, err error) {
+func (session *badooSearchSession) handleError(ctx context.Context, browser *badoogo.BadooRequester, err error) *badoogo.BadooRequester {
 	if err == nil {
-		return
+		session.errorCounter = 0
+		return browser
 	}
+
+	// Если операция была просто отменена, тогда здесь вылетит паника - и при завершении задачи не будут создаваться скрины
+	utils.Delay(ctx, utils.Range{Min: 1 * time.Millisecond, Max: 2 * time.Millisecond })
 
 	uid := uuid.NewV4()
 
@@ -49,7 +53,21 @@ func (session *badooSearchSession) unexpected(browser *badoogo.BadooRequester, e
 		),
 	)
 
-	session.log.Errorf("Unexpected browser error: %+v", err)
+	session.log.Errorf("Unexpected browser error '%s': %+v", uid.String(), err)
+	session.errorCounter++
+
+	if session.errorCounter >= maxAttempts-2 {
+		session.log.Warning("Recreate badoo browser")
+		nextBrowser, err := session.browser.Spawn()
+		if err != nil {
+			session.log.Errorf("Create browser failed: %+v", err)
+			return browser
+		}
+		browser.Close()
+		browser = nextBrowser
+	}
+
+	return browser
 }
 
 func (session *badooSearchSession) repeat(ctx context.Context, handler func() error) error {

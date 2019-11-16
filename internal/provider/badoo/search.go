@@ -41,16 +41,21 @@ func (session *badooSearchSession) process(ctx context.Context) {
 	session.mutex.Unlock()
 
 	session.browser.SetDebug(false)
-	defer session.browser.Close()
+	defer func() { session.browser.Close() }()
 	defer session.rater.Close()
 
-	if err := session.browser.Login(session.state.Search.Email, session.state.Search.Password); err != nil {
-		session.unexpected(session.browser, err)
+	err := session.repeat(ctx, func() error {
+		err := session.browser.Login(session.state.Search.Email, session.state.Search.Password)
+		session.browser = session.handleError(ctx, session.browser, err)
+		return err
+	})
+
+	if err != nil {
 		session.raise(err)
 		return
 	}
 
-	err := session.repeat(ctx, func() error {
+	err = session.repeat(ctx, func() error {
 		var err error
 		session.liker, err = session.browser.Spawn()
 		return err
@@ -61,7 +66,7 @@ func (session *badooSearchSession) process(ctx context.Context) {
 		return
 	}
 
-	defer session.liker.Close()
+	defer func() { session.liker.Close() }()
 
 	err = session.repeat(ctx, func() error {
 		var err error
@@ -74,7 +79,7 @@ func (session *badooSearchSession) process(ctx context.Context) {
 		return
 	}
 
-	defer session.walker.Close()
+	defer func() { session.walker.Close() }()
 
 	session.alcoExpr = regexp.MustCompile(`Алкоголь:\n([\p{L} ]+)`)
 	session.smokeExpr = regexp.MustCompile(`Курение:\n([\p{L} ]+)`)
@@ -85,10 +90,10 @@ func (session *badooSearchSession) process(ctx context.Context) {
 
 func (session *badooSearchSession) work(ctx context.Context) {
 	for {
-		// session.processDating(ctx)
+		session.processDating(ctx)
 
-		// utils.Delay(ctx, utils.Range{Min: minBetweenDelay,
-		// 	Max: maxBetweenDelay})
+		utils.Delay(ctx, utils.Range{Min: minBetweenDelay,
+			Max: maxBetweenDelay})
 
 		session.processWalking(ctx)
 
@@ -98,11 +103,13 @@ func (session *badooSearchSession) work(ctx context.Context) {
 }
 
 func (session *badooSearchSession) processDating(ctx context.Context) {
+	session.log.Info("badoo: dating mode started")
 	now := time.Now()
 
 	for time.Now().Sub(now) < datingDuration {
 		err := session.liker.Fetch(func(user *badoogo.BadooUser) int {
 			person := session.convertPersonRecord(user)
+			session.log.Debugf("Person fetched: %+v", &person)
 			rating, extra := session.rater.Rate(&person)
 			rating += extra
 
@@ -110,22 +117,25 @@ func (session *badooSearchSession) processDating(ctx context.Context) {
 				session.log.Debugf("Like '%s'", person.Name)
 				return badoogo.ActionLike
 			}
+
 			session.log.Debugf("Dislike '%s'", person.Name)
 			return badoogo.ActionPass
 		})
 
-		session.unexpected(session.liker, err)
+		session.liker = session.handleError(ctx, session.liker, err)
 
 		utils.Delay(ctx, utils.Range{Min: minProfileDelay, Max: maxProfileDelay})
 	}
 }
 
 func (session *badooSearchSession) processWalking(ctx context.Context) {
+	session.log.Info("badoo: walking around mode started")
 	now := time.Now()
 
 	for time.Now().Sub(now) < walkingDuration {
-		err := session.liker.WalkAround(func(user *badoogo.BadooUser) int {
+		err := session.walker.WalkAround(func(user *badoogo.BadooUser) int {
 			person := session.convertPersonRecord(user)
+			session.log.Debugf("Person fetched: %+v", &person)
 			rating, extra := session.rater.Rate(&person)
 			rating += extra
 
@@ -143,7 +153,7 @@ func (session *badooSearchSession) processWalking(ctx context.Context) {
 			return badoogo.ActionSkip
 		})
 
-		session.unexpected(session.liker, err)
+		session.walker = session.handleError(ctx, session.walker, err)
 
 		utils.Delay(ctx, utils.Range{Min: minProfileDelay, Max: maxProfileDelay})
 	}

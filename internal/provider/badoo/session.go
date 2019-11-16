@@ -50,6 +50,8 @@ type badooSearchSession struct {
 	alcoExpr  *regexp.Regexp
 	smokeExpr *regexp.Regexp
 	bodyExpr  *regexp.Regexp
+
+	errorCounter int
 }
 
 func (session *badooSearchSession) SaveState() string {
