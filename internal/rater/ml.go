@@ -12,7 +12,6 @@ import (
 
 type mlConfig struct {
 	Threshold      float32
-	PositiveWeight int
 }
 
 type mlRater struct {
@@ -62,7 +61,7 @@ func (r *mlRater) classify(data []byte) (float32, error) {
 	return rating, nil
 }
 
-func (r *mlRater) Rate(person *types.Person) (int, int) {
+func (r *mlRater) Rate(person *types.Person) int {
 
 	var max float32
 
@@ -85,16 +84,19 @@ func (r *mlRater) Rate(person *types.Person) (int, int) {
 
 	rating := 0
 	if max >= r.config.Threshold {
-		rating = int(math.Ceil(float64(max) * float64(maxPartialRating)))
+		rating = int(math.Ceil(float64(max) * float64(100)))
 	}
 
-	person.Rating = rating
 	return passNext(r.nextRater, person, rating)
 }
 
 func (r *mlRater) Next(nextRater types.Rater) types.Rater {
 	r.nextRater = nextRater
 	return nextRater
+}
+
+func (r *mlRater) Threshold(threshold int) int {
+	return passThreshold(r.nextRater, threshold, int(math.Ceil(float64(r.config.Threshold)*100)))
 }
 
 func (r *mlRater) Close() {

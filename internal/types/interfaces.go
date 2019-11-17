@@ -47,9 +47,15 @@ type Provider interface {
 	GetResultActions(result *PersonRecord) []Action
 }
 
+const (
+	LikeThreshold = iota
+	SuperLikeThreshold
+)
+
 type Rater interface {
 	Init(log *logging.Logger, settings *SearchSettings)
-	Rate(person *Person) (int,int)
+	Rate(person *Person) int
 	Next(nextRater Rater) Rater
+	Threshold(threshold int) int
 	Close()
 }

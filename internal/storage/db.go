@@ -118,10 +118,11 @@ func Favourite(personID uint) {
 	db.Model(&record).Update("favourite", true)
 }
 
-func SearchPerson(userID string) *types.PersonRecord {
+func SearchPerson(providerID, userID string) *types.PersonRecord {
 	record := types.PersonRecord{}
-	db.Model(&record).Where("person_id = ?", userID).First(&record)
-	if record.PersonID != userID {
+	ID := providerID+"."+userID
+	db.Model(&record).Where("person_id = ?", ID).First(&record)
+	if record.PersonID != ID {
 		return nil
 	}
 

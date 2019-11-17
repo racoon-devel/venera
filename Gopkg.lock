@@ -26,12 +26,78 @@
   version = "v0.2"
 
 [[projects]]
-  digest = "1:78074c7e204a2e3764ddfaab7cb86949d21c0c0b11f7724e09beaf5054079f3c"
+  branch = "master"
+  digest = "1:0093b743f2bb4107bd717acc4810c1ee482c16a22cb245297bfcaf57e69ecdc1"
+  name = "github.com/chromedp/cdproto"
+  packages = [
+    ".",
+    "accessibility",
+    "animation",
+    "applicationcache",
+    "audits",
+    "backgroundservice",
+    "browser",
+    "cachestorage",
+    "cast",
+    "cdp",
+    "css",
+    "database",
+    "debugger",
+    "deviceorientation",
+    "dom",
+    "domdebugger",
+    "domsnapshot",
+    "domstorage",
+    "emulation",
+    "fetch",
+    "headlessexperimental",
+    "heapprofiler",
+    "indexeddb",
+    "input",
+    "inspector",
+    "io",
+    "layertree",
+    "log",
+    "media",
+    "memory",
+    "network",
+    "overlay",
+    "page",
+    "performance",
+    "profiler",
+    "runtime",
+    "security",
+    "serviceworker",
+    "storage",
+    "systeminfo",
+    "target",
+    "tethering",
+    "tracing",
+    "webaudio",
+    "webauthn",
+  ]
+  pruneopts = "UT"
+  revision = "6626966fbae48c2a52d823d68365c3eea42e2951"
+
+[[projects]]
+  digest = "1:bca0c32cc7182e5e3aa59ec71d8e16fd4fdb0ecb53ad6313ff7df5e76862692a"
+  name = "github.com/chromedp/chromedp"
+  packages = [
+    ".",
+    "device",
+    "kb",
+  ]
+  pruneopts = "UT"
+  revision = "8e0a16689423d48d8907c62a543c7ea468059228"
+  version = "v0.5.1"
+
+[[projects]]
+  digest = "1:24767d95dd94f3ed8c8d879af7baf642fc3a4371acb30807192cf1d89ddc5d6c"
   name = "github.com/esimov/pigo"
   packages = ["core"]
   pruneopts = "UT"
-  revision = "792991e44c71d505c2e4bc08049d7c170489ac6f"
-  version = "v1.3.0"
+  revision = "9105c677c44c5898ec2264f3d02d6b85f27b54fb"
+  version = "v1.4.0"
 
 [[projects]]
   digest = "1:51712f342cdefcad2c867f399a3ce8223675221d4386c81cfcccd8f0656e722e"
@@ -40,6 +106,38 @@
   pruneopts = "UT"
   revision = "9860bdfd3a171ceafb6e1eafa163482a6ef92643"
   version = "v4.6.4"
+
+[[projects]]
+  branch = "master"
+  digest = "1:368ba96ddacaae2fe265afcac3062a199908f7dc0c6569d6e05a7a13042cccf1"
+  name = "github.com/gobwas/httphead"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2c6c146eadee0b69f856f87e3e9f1d0cd6aad2f5"
+
+[[projects]]
+  digest = "1:bdfe3b97ff03e4f7252c74cfaefb20050a360c8fb760701014ebf99c9540abd1"
+  name = "github.com/gobwas/pool"
+  packages = [
+    ".",
+    "internal/pmath",
+    "pbufio",
+    "pbytes",
+  ]
+  pruneopts = "UT"
+  revision = "fa3125c39d7eca32e1387bb69b1b38dcb31b1e0b"
+  version = "v0.2.0"
+
+[[projects]]
+  digest = "1:aea6697202cefa9365797c4c8ad0a1dbdf15ba21600ddc599a9000629a2ecb6f"
+  name = "github.com/gobwas/ws"
+  packages = [
+    ".",
+    "wsutil",
+  ]
+  pruneopts = "UT"
+  revision = "05baaea2bbcfe8963301c62d9931c882d59595cd"
+  version = "v1.0.2"
 
 [[projects]]
   digest = "1:cbec35fe4d5a4fba369a656a8cd65e244ea2c743007d8f6c1ccb132acf9d1296"
@@ -77,6 +175,14 @@
   revision = "2bc1f35cddc0cc527b4bc3dce8578fc2a6c11384"
 
 [[projects]]
+  branch = "master"
+  digest = "1:5565954a979057d9bb093b1001f804d6e0ebdf3917117f3e7319b1d6f083ddc5"
+  name = "github.com/knq/sysutil"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "15668db23d08158adb81783bf9e1617e7ca99c10"
+
+[[projects]]
   digest = "1:0ead8e64fe356bd9221605e3ec40b4438509868018cbbbaaaff3ebae1b69b78b"
   name = "github.com/lib/pq"
   packages = [
@@ -88,6 +194,19 @@
   pruneopts = "UT"
   revision = "3427c32cb71afc948325f299f040e53c1dd78979"
   version = "v1.2.0"
+
+[[projects]]
+  digest = "1:891f9c13236eb1b6d1abd4fe01e6c9be51bcc65f04da0dfa4bfdf356374e98c4"
+  name = "github.com/mailru/easyjson"
+  packages = [
+    ".",
+    "buffer",
+    "jlexer",
+    "jwriter",
+  ]
+  pruneopts = "UT"
+  revision = "1b2b06f5f209fea48ff5922d8bfb2b9ed5d8f00b"
+  version = "v0.7.0"
 
 [[projects]]
   digest = "1:53bc4cd4914cd7cd52139990d5170d6dc99067ae31c56530621b18b35fc30318"
@@ -175,7 +294,15 @@
     "publicsuffix",
   ]
   pruneopts = "UT"
-  revision = "380dde419d290c41960e262a7fbcbc059d70c4e3"
+  revision = "f9c8255933865a6f8452ccf0cc47ac980da5ac56"
+
+[[projects]]
+  branch = "master"
+  digest = "1:3b81f20605df873608343956a1f707bc63fe76bbc9ab3adb644ce95b4502a525"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "52ab431487773bc9dd1b0766228b1cf3944126bf"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -216,6 +343,10 @@
   input-imports = [
     "github.com/BurntSushi/toml",
     "github.com/ccding/go-logging/logging",
+    "github.com/chromedp/cdproto/browser",
+    "github.com/chromedp/cdproto/dom",
+    "github.com/chromedp/cdproto/emulation",
+    "github.com/chromedp/chromedp",
     "github.com/esimov/pigo/core",
     "github.com/go-telegram-bot-api/telegram-bot-api",
     "github.com/gorilla/mux",

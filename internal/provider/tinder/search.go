@@ -187,17 +187,18 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 		session.log.Debugf("Rate person '%s'...", record.Name)
 		session.log.Debugf("Ping time: %s", record.PingTime.Format("Mon Jan _2 15:04:05 2006"))
 		person := convertPersonRecord(&record)
-		rating, extra := session.rater.Rate(&person)
-		rating += extra
-		person.Rating = rating
 
-		if person.Bio != "" {
-			session.log.Debug(person.Bio)
+		var rating int
+		stored := storage.SearchPerson(session.provider.ID(), person.UserID)
+		if stored != nil {
+			rating = stored.Rating
+		} else {
+			rating = session.rater.Rate(&person)
 		}
 
 		toLike := rand.Intn(2)
 
-		if rating > 0 || (rating == 0 && toLike == 1) {
+		if rating >= session.rater.Threshold(types.LikeThreshold) || (rating > 0 && toLike == 1) {
 			session.log.Debugf("Like '%s' rating(%d)", person.Name, rating)
 			session.repeat(ctx, func() error {
 				_, err := session.api.Like(record)
@@ -205,7 +206,7 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 			})
 			atomic.AddUint32(&session.state.Stat.Liked, 1)
 
-			if rating > 0 {
+			if rating > 0 && stored == nil {
 				session.appendResult(&person)
 			}
 

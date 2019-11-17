@@ -2,6 +2,8 @@ package provider
 
 import (
 	"fmt"
+
+	"racoondev.tk/gitea/racoon/venera/internal/provider/badoo"
 	"racoondev.tk/gitea/racoon/venera/internal/provider/export"
 
 	"github.com/ccding/go-logging/logging"
@@ -16,6 +18,7 @@ var (
 		"tinder": new(tinder.TinderProvider),
 		"mamba":  new(mamba.MambaProvider),
 		"export": new(export.ExportProvider),
+		"badoo":  new(badoo.BadooProvider),
 	}
 )
 

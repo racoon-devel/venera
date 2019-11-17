@@ -3,6 +3,7 @@ package rater
 import (
 	"fmt"
 	"github.com/ccding/go-logging/logging"
+	"math"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"time"
@@ -21,10 +22,14 @@ type defaultConfig struct {
 	AlcoFactor  int
 	SmokeFactor int
 	BodyFactor  int
+
+	LikeThreshold      int
+	SuperLikeThreshold int
 }
 
 type defaultRater struct {
 	configName string
+	scores     int
 	settings   *types.SearchSettings
 	processor  *utils.TextProcessor
 	detector   *utils.FaceDetector
@@ -53,7 +58,9 @@ func (r *defaultRater) Init(log *logging.Logger, settings *types.SearchSettings)
 		panic(err)
 	}
 
-	log.Debugf("Rater configuration [ default ] : %+v", r.config)
+	r.scores += 1 + r.processor.GetMatchCount() + 2*types.Positive + types.Thin
+
+	log.Debugf("Rater configuration [ default ] : %+v, max scores = %d", r.config, r.scores)
 }
 
 func (r *defaultRater) hasPhoto(photos []string) bool {
@@ -70,53 +77,72 @@ func (r *defaultRater) hasPhoto(photos []string) bool {
 	return false
 }
 
-// <0 - dislike, =0 random, >1 - like and save
-func (r *defaultRater) Rate(person *types.Person) (int, int) {
-	var rating int
+func (r *defaultRater) Rate(person *types.Person) int {
+	var score int
 
 	if person.Photo == nil || len(person.Photo) == 0 || person.Body == types.Fat {
 		person.Rating = IgnorePerson
-		return person.Rating, 0
+		return person.Rating
 	}
 
 	if !r.hasPhoto(person.Photo) {
 		person.Rating = IgnorePerson
-		return person.Rating, 0
+		return person.Rating
 	}
 
 	if !person.VisitTime.IsZero() {
 		distance := time.Now().Sub(person.VisitTime)
 		if distance.Hours()/24 > float64(r.config.RelevantDays) {
 			person.Rating = IgnorePerson
-			return person.Rating, 0
+			return person.Rating
 		}
 	}
 
 	if len(person.Bio) > r.config.MinBioLength {
-		rating += r.config.BioPresentWeight
+		score += r.config.BioPresentWeight
 
 		matches, dismatches := r.processor.Process(person.Bio)
 		person.BioMatches = matches.Matches
 
-		rating += matches.Weight * r.config.BioMatchWeight
-		rating -= dismatches.Weight * r.config.BioMatchWeight
+		score += matches.Weight * r.config.BioMatchWeight
+		score -= dismatches.Weight * r.config.BioMatchWeight
 	}
 
 	if person.VIP {
-		rating += r.config.VIPAccountWeight
+		score += r.config.VIPAccountWeight
 	}
 
-	rating += person.Alco * r.config.AlcoFactor
-	rating += person.Smoke * r.config.SmokeFactor
-	rating += person.Body * r.config.BodyFactor
+	score += person.Alco * r.config.AlcoFactor
+	score += person.Smoke * r.config.SmokeFactor
+	score += person.Body * r.config.BodyFactor
 
-	person.Rating = rating
+	x := (float64(score) / float64(r.scores)) * 100
+	y := -(100 / (0.05 * (x + 16))) + 120
+
+	rating := int(math.Ceil(y))
+	if rating > 100 {
+		rating = 100
+	}
+
+	if rating < 0 {
+		rating = 0
+	}
+
 	return passNext(r.nextRater, person, rating)
 }
 
 func (r *defaultRater) Next(nextRater types.Rater) types.Rater {
 	r.nextRater = nextRater
 	return nextRater
+}
+
+func (r *defaultRater) Threshold(thresholdType int) int {
+	threshold := r.config.LikeThreshold
+	if thresholdType == types.SuperLikeThreshold {
+		threshold = r.config.SuperLikeThreshold
+	}
+
+	return passThreshold(r.nextRater, thresholdType, threshold)
 }
 
 func (r *defaultRater) Close() {

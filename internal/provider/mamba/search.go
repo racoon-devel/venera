@@ -93,9 +93,12 @@ func (session *mambaSearchSession) processUser(ctx context.Context, user *mambaU
 	}
 
 	person := convertPersonRecord(user, photos, visitTime[0])
-	rating, extra := session.rater.Rate(&person)
-	rating += extra
-	person.Rating = rating
+	if stored := storage.SearchPerson(session.provider.ID(), person.UserID); stored != nil {
+		session.log.Debugf("Skip exists person '%s'", person.UserID)
+		return
+	}
+
+	rating := session.rater.Rate(&person)
 
 	// TODO: optimization
 	if !session.checkLookFor(user.Familiarity.LookFor) {
