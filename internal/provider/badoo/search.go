@@ -136,6 +136,10 @@ func (session *badooSearchSession) processWalking(ctx context.Context) {
 			person := session.convertPersonRecord(user)
 
 			session.log.Debugf("Person fetched: %+v", &person)
+			if stored := storage.SearchPerson(session.provider.ID(), person.UserID); stored != nil {
+				return badoogo.ActionSkip
+			}
+
 			rating := session.rater.Rate(&person)
 
 			if rating > 0 {
