@@ -113,6 +113,10 @@ func (self *TextProcessor) compileExpressions(keywords []string) ([]matchPattern
 	return expressions, nil
 }
 
+func (self *TextProcessor) GetMatchCount() int {
+	return len(self.positive)
+}
+
 func validate(pattern string) error {
 	if strings.TrimSpace(pattern) != pattern {
 		return fmt.Errorf("'%s' must have not leading and trailing spaces", pattern)

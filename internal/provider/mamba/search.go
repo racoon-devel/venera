@@ -93,9 +93,7 @@ func (session *mambaSearchSession) processUser(ctx context.Context, user *mambaU
 	}
 
 	person := convertPersonRecord(user, photos, visitTime[0])
-	rating, extra := session.rater.Rate(&person)
-	rating += extra
-	person.Rating = rating
+	rating := session.rater.Rate(&person)
 
 	// TODO: optimization
 	if !session.checkLookFor(user.Familiarity.LookFor) {

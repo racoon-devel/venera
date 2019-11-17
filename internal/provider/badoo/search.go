@@ -110,10 +110,9 @@ func (session *badooSearchSession) processDating(ctx context.Context) {
 		err := session.liker.Fetch(func(user *badoogo.BadooUser) int {
 			person := session.convertPersonRecord(user)
 			session.log.Debugf("Person fetched: %+v", &person)
-			rating, extra := session.rater.Rate(&person)
-			rating += extra
+			rating := session.rater.Rate(&person)
 
-			if rating >= rater.LikeThreshold {
+			if rating >= session.rater.Threshold(types.LikeThreshold) {
 				session.log.Debugf("Like '%s'", person.Name)
 				return badoogo.ActionLike
 			}
@@ -137,8 +136,7 @@ func (session *badooSearchSession) processWalking(ctx context.Context) {
 			person := session.convertPersonRecord(user)
 
 			session.log.Debugf("Person fetched: %+v", &person)
-			rating, extra := session.rater.Rate(&person)
-			rating += extra
+			rating := session.rater.Rate(&person)
 
 			if rating > 0 {
 				if _, err := storage.AppendPerson(&person, session.taskID, session.provider.ID()); err != nil {
@@ -148,7 +146,7 @@ func (session *badooSearchSession) processWalking(ctx context.Context) {
 
 			utils.Delay(ctx, utils.Range{Min: minProfileDelay, Max: maxProfileDelay})
 
-			if rating >= rater.SuperLikeThreshold {
+			if rating >= session.rater.Threshold(types.SuperLikeThreshold) {
 				session.log.Debugf("Like '%s'", person.Name)
 				return badoogo.ActionLike
 			}
