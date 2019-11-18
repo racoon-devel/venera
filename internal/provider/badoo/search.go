@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"racoondev.tk/gitea/racoon/venera/internal/provider/badoo/badoogo"
@@ -110,14 +111,18 @@ func (session *badooSearchSession) processDating(ctx context.Context) {
 		err := session.liker.Fetch(func(user *badoogo.BadooUser) int {
 			person := session.convertPersonRecord(user)
 			session.log.Debugf("Person fetched: %+v", &person)
+			atomic.AddUint32(&session.state.Stat.Retrieved, 1)
+
 			rating := session.rater.Rate(&person)
 
 			if rating >= session.rater.Threshold(types.LikeThreshold) {
+				atomic.AddUint32(&session.state.Stat.Liked, 1)
 				session.log.Debugf("Like '%s'", person.Name)
 				return badoogo.ActionLike
 			}
 
 			session.log.Debugf("Dislike '%s'", person.Name)
+			atomic.AddUint32(&session.state.Stat.Disliked, 1)
 			return badoogo.ActionPass
 		})
 
@@ -136,9 +141,12 @@ func (session *badooSearchSession) processWalking(ctx context.Context) {
 			person := session.convertPersonRecord(user)
 
 			session.log.Debugf("Person fetched: %+v", &person)
+
 			if stored := storage.SearchPerson(session.provider.ID(), person.UserID); stored != nil {
 				return badoogo.ActionSkip
 			}
+
+			atomic.AddUint32(&session.state.Stat.Retrieved, 1)
 
 			rating := session.rater.Rate(&person)
 
@@ -152,6 +160,7 @@ func (session *badooSearchSession) processWalking(ctx context.Context) {
 
 			if rating >= session.rater.Threshold(types.SuperLikeThreshold) {
 				session.log.Debugf("Like '%s'", person.Name)
+				atomic.AddUint32(&session.state.Stat.Liked, 1)
 				return badoogo.ActionLike
 			}
 

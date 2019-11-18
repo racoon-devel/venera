@@ -76,7 +76,12 @@ func (m *mambaRequester) request(method string, args methodArgs, output interfac
 		return fmt.Errorf("Mamba API error: '%s'", response.Message)
 	}
 
-	return mapstructure.Decode(response.Data, output)
+	err = mapstructure.Decode(response.Data, output)
+	if err != nil {
+		fmt.Println(string(data))
+	}
+
+	return err
 }
 
 type geoItem struct {
@@ -150,7 +155,7 @@ type mambaUser struct {
 		Race         string
 		Orientation  string
 	} `mapstructure:"-"`
-	Type interface{}
+	Type      interface{}
 	Interests []string
 }
 
