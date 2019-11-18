@@ -1,4 +1,4 @@
-FROM golang:latest
+FROM golang:1.12.1
 
 RUN wget "http://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-1.14.0.tar.gz" && \
    tar -zxv -C /usr/local/ -f libtensorflow-cpu-linux-x86_64-1.14.0.tar.gz && \
