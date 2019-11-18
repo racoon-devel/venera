@@ -25,6 +25,7 @@ func (session *badooSearchSession) raise(err error) {
 
 	session.log.Criticalf("badoo: %+v", err)
 	session.status = types.StatusError
+	atomic.AddUint32(&session.state.Stat.Errors, 1)
 	session.lastError = err
 }
 
@@ -35,7 +36,7 @@ func (session *badooSearchSession) handleError(ctx context.Context, browser *bad
 	}
 
 	// Если операция была просто отменена, тогда здесь вылетит паника - и при завершении задачи не будут создаваться скрины
-	utils.Delay(ctx, utils.Range{Min: 1 * time.Millisecond, Max: 2 * time.Millisecond })
+	utils.Delay(ctx, utils.Range{Min: 1 * time.Millisecond, Max: 2 * time.Millisecond})
 
 	uid := uuid.NewV4()
 
@@ -82,8 +83,6 @@ func (session *badooSearchSession) repeat(ctx context.Context, handler func() er
 		}
 
 		attempts++
-
-		atomic.AddUint32(&session.state.Stat.Errors, 1)
 
 		session.raise(err)
 
