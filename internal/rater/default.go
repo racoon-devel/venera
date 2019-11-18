@@ -2,11 +2,12 @@ package rater
 
 import (
 	"fmt"
-	"github.com/ccding/go-logging/logging"
 	"math"
+	"time"
+
+	"github.com/ccding/go-logging/logging"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
-	"time"
 
 	"github.com/BurntSushi/toml"
 )
@@ -118,6 +119,11 @@ func (r *defaultRater) Rate(person *types.Person) int {
 
 	x := (float64(score) / float64(r.scores)) * 100
 	y := -(100 / (0.05 * (x + 16))) + 120
+
+	if x < 0 || y < 0 {
+		person.Rating = IgnorePerson
+		return person.Rating
+	}
 
 	rating := int(math.Ceil(y))
 	if rating > 100 {
