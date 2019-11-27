@@ -152,7 +152,7 @@ func (session *tinderSearchSession) Poll() {
 	if err == nil {
 		for _, match := range matches {
 			_, isUnique := session.state.Matches[match.ID]
-			if isUnique {
+			if !isUnique {
 				session.log.Infof("New match found! %s { isSuperliked: %t, isBoosted:%t }", match.Person.Name,
 					match.IsSuperLike, match.IsBoostMatch)
 				person := convertMatch(&match)

@@ -62,9 +62,7 @@ func LoadPersons(taskID uint, ascending bool, limit uint, offset uint, favourite
 		ctx = ctx.Order("rating desc, created_at")
 	}
 
-	if favourite {
-		ctx = ctx.Where("favourite = ?", favourite)
-	}
+	ctx = ctx.Where("favourite = ?", favourite)
 
 	if rating > 0 {
 		ctx = ctx.Where("rating = ?", rating)
@@ -120,7 +118,7 @@ func Favourite(personID uint) {
 
 func SearchPerson(providerID, userID string) *types.PersonRecord {
 	record := types.PersonRecord{}
-	ID := providerID+"."+userID
+	ID := providerID + "." + userID
 	db.Model(&record).Where("person_id = ?", ID).First(&record)
 	if record.PersonID != ID {
 		return nil
