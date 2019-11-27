@@ -22,14 +22,14 @@ const (
 
 	delayBatchMin     = 3 * time.Minute
 	delayBatchMax     = 5 * time.Minute
-	requestPerSession = 5
+	requestPerSession = 7
 
 	delaySessionMin = 1 * time.Hour
 	delaySessionMax = 2 * time.Hour
 )
 
 func (session *tinderSearchSession) auth(ctx context.Context) error {
-	auth := newTinderAuth( session.state.Search.Tel)
+	auth := newTinderAuth(session.state.Search.Tel)
 
 	session.mutex.Lock()
 	auth.RefreshToken = session.state.Search.RefreshToken
