@@ -57,7 +57,7 @@ func (badoo *BadooRequester) WalkAround(handler PersonRater) error {
 	err = badoo.run(
 		badoo.wrap("wait profiles", chromedp.WaitVisible(`a.user-card__link`)),
 		badoo.wrap("fetch profiles", chromedp.AttributesAll(`a.user-card__link`, &dir)),
-		badoo.wrap("go to next", chromedp.Click(`a.pagination__nav--next`)),
+		badoo.wrap("go to next", chromedp.Click(`div.pagination__item:nth-child(10) > a:nth-child(1)`)),
 	)
 
 	if err != nil {

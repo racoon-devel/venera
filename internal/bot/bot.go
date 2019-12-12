@@ -148,7 +148,7 @@ func handleUpdates(update *tgbotapi.Update) {
 	}
 
 	if userName != bot.trustedUser {
-		sendTextMessage("You are not trusted user")
+		sendTextMessage(fmt.Sprintf("Not trusted user: %s", userName))
 		return
 	}
 
