@@ -12,8 +12,8 @@ type Range struct {
 }
 
 const (
-	NightBeginHour = 1
-	NightEndHour = 9
+	NightBeginHour = 2
+	NightEndHour = 7
 )
 
 func Delay(ctx context.Context, delay Range) {
