@@ -10,15 +10,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
-
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-
-	"racoondev.tk/gitea/racoon/venera/internal/bot"
-
 	"github.com/ccding/go-logging/logging"
 
+	"racoondev.tk/gitea/racoon/venera/internal/bot"
+	"racoondev.tk/gitea/racoon/venera/internal/storage"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"racoondev.tk/gitea/racoon/venera/internal/webui"
 	"racoondev.tk/gitea/racoon/venera/tindergo"
 )
@@ -52,6 +49,7 @@ type tinderSearchSession struct {
 	log      *logging.Logger
 	rater    types.Rater
 	top      *topList
+	geo      geoposition
 }
 
 func (session *tinderSearchSession) SaveState() string {
