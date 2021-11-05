@@ -7,10 +7,8 @@ import (
 	"time"
 
 	"racoondev.tk/gitea/racoon/venera/internal/bot"
-
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-
 	"racoondev.tk/gitea/racoon/venera/internal/rater"
+	"racoondev.tk/gitea/racoon/venera/internal/storage"
 	"racoondev.tk/gitea/racoon/venera/internal/types"
 	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"racoondev.tk/gitea/racoon/venera/tindergo"
@@ -99,8 +97,11 @@ func (session *tinderSearchSession) setup(ctx context.Context) {
 
 	session.log.Debugf("tinder: update location...")
 
+	center := geoposition{session.state.Search.Latitude, session.state.Search.Longitude}
+	session.geo = randomPosition(center)
+
 	session.repeat(ctx, func() error {
-		return session.api.UpdateLocation(session.state.Search.Latitude, session.state.Search.Longitude)
+		return session.api.UpdateLocation(session.geo.Latitude, session.geo.Longitude)
 	})
 
 	session.log.Debugf("tinder: update preferences...")
@@ -157,10 +158,13 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 		session.log.Info("tinder: processing session finished")
 		utils.Delay(ctx, utils.Range{Min: delaySessionMin, Max: delaySessionMax})
 
+		center := geoposition{session.state.Search.Latitude, session.state.Search.Longitude}
+		shiftPosition(center, &session.geo)
+
 		session.repeat(ctx, func() error {
 			return session.api.UpdateLocation(
-				utils.RandomCoordinate(session.state.Search.Latitude),
-				utils.RandomCoordinate(session.state.Search.Longitude),
+				session.geo.Latitude,
+				session.geo.Longitude,
 			)
 		})
 	}
