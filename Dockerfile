@@ -1,4 +1,4 @@
-FROM golang:1.12.1
+FROM golang:1.17.1
 
 RUN wget "http://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-1.14.0.tar.gz" && \
    tar -zxv -C /usr/local/ -f libtensorflow-cpu-linux-x86_64-1.14.0.tar.gz && \
@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y \
 	fonts-kacst \
 	fonts-symbola \
 	fonts-noto \
-	ttf-freefont \
 	--no-install-recommends \
 	&& apt-get purge --auto-remove -y curl gnupg \
 	&& rm -rf /var/lib/apt/lists/*
