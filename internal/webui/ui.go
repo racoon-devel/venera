@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
 var templates *template.Template

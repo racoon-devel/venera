@@ -12,12 +12,12 @@ import (
 
 	"github.com/ccding/go-logging/logging"
 
-	"racoondev.tk/gitea/racoon/venera/internal/bot"
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
-	"racoondev.tk/gitea/racoon/venera/internal/webui"
-	"racoondev.tk/gitea/racoon/venera/tindergo"
+	"github.com/racoon-devel/venera/internal/bot"
+	"github.com/racoon-devel/venera/internal/storage"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/webui"
+	"github.com/racoon-devel/venera/tindergo"
 )
 
 type tinderStat struct {

@@ -11,10 +11,10 @@ import (
 
 	"github.com/ccding/go-logging/logging"
 
-	"racoondev.tk/gitea/racoon/venera/internal/bot"
-	"racoondev.tk/gitea/racoon/venera/internal/dispatcher"
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/bot"
+	"github.com/racoon-devel/venera/internal/dispatcher"
+	"github.com/racoon-devel/venera/internal/storage"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
 const version = "1.0"

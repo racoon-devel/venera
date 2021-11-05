@@ -2,8 +2,9 @@ package bot
 
 import (
 	"context"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 const (
@@ -55,7 +56,7 @@ func makeRawMessage(chatID int64, message *Message) []tgbotapi.Chattable {
 	case messageRequest:
 		return makeSingleMessage(chatID, message)
 	case messageReply:
-		if (message.replyID == "") {
+		if message.replyID == "" {
 			return makeSingleMessage(chatID, message)
 		}
 		fallthrough

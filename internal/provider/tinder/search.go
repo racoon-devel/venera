@@ -6,12 +6,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"racoondev.tk/gitea/racoon/venera/internal/bot"
-	"racoondev.tk/gitea/racoon/venera/internal/rater"
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
-	"racoondev.tk/gitea/racoon/venera/tindergo"
+	"github.com/racoon-devel/venera/internal/bot"
+	"github.com/racoon-devel/venera/internal/rater"
+	"github.com/racoon-devel/venera/internal/storage"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/utils"
+	"github.com/racoon-devel/venera/tindergo"
 )
 
 const (

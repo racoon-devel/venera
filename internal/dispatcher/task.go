@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"racoondev.tk/gitea/racoon/venera/internal/bot"
+	"github.com/racoon-devel/venera/internal/bot"
 
 	"github.com/ccding/go-logging/logging"
 
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/webui"
+	"github.com/racoon-devel/venera/internal/storage"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/webui"
 )
 
 type TaskMode int
@@ -144,9 +144,9 @@ func (task *Task) poll() {
 	}
 
 	if err := task.session.GetLastError(); err != nil {
-		msg := bot.Message{ Content: fmt.Sprintf("Task #%d [ %s ] raised error: %+v",
+		msg := bot.Message{Content: fmt.Sprintf("Task #%d [ %s ] raised error: %+v",
 			task.ID, task.Provider, err)}
-		bot.Post( &msg )
+		bot.Post(&msg)
 	}
 }
 

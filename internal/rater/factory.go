@@ -2,11 +2,11 @@ package rater
 
 import (
 	"github.com/ccding/go-logging/logging"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 const (
-	IgnorePerson       = -100
+	IgnorePerson = -100
 )
 
 type raterCreator func(configuration string, log *logging.Logger, settings *types.SearchSettings) types.Rater

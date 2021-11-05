@@ -3,14 +3,14 @@ package provider
 import (
 	"fmt"
 
-	"racoondev.tk/gitea/racoon/venera/internal/provider/badoo"
-	"racoondev.tk/gitea/racoon/venera/internal/provider/export"
+	"github.com/racoon-devel/venera/internal/provider/badoo"
+	"github.com/racoon-devel/venera/internal/provider/export"
 
 	"github.com/ccding/go-logging/logging"
 
-	"racoondev.tk/gitea/racoon/venera/internal/provider/mamba"
-	"racoondev.tk/gitea/racoon/venera/internal/provider/tinder"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/provider/mamba"
+	"github.com/racoon-devel/venera/internal/provider/tinder"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 var (

@@ -10,14 +10,14 @@ import (
 	"github.com/ccding/go-logging/logging"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
 type Channel chan *Message
 type CommandHandler func(args []string, replyID string) (*Message, error)
 
 type requestData struct {
-	ctx context.Context
+	ctx             context.Context
 	responseChannel chan string
 }
 
@@ -79,7 +79,6 @@ func Request(ctx context.Context, text string) (string, error) {
 	timeouted, _ := context.WithTimeout(ctx, requestTimeout)
 	responseChannel := make(chan string)
 	bot.messageChan <- newRequestMessage(timeouted, text, responseChannel)
-
 
 	select {
 	case <-timeouted.Done():

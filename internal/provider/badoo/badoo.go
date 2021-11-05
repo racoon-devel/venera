@@ -7,7 +7,7 @@ import (
 	"github.com/ccding/go-logging/logging"
 	"github.com/gorilla/mux"
 
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 type searchSettings struct {

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
 func parseForm(r *http.Request, editMode bool) (*searchSettings, *tinderAuth, error) {

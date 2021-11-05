@@ -8,11 +8,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"racoondev.tk/gitea/racoon/venera/internal/provider/badoo/badoogo"
-	"racoondev.tk/gitea/racoon/venera/internal/rater"
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/provider/badoo/badoogo"
+	"github.com/racoon-devel/venera/internal/rater"
+	"github.com/racoon-devel/venera/internal/storage"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
 const (

@@ -3,12 +3,13 @@ package dispatcher
 import (
 	"fmt"
 	"net/url"
-	"racoondev.tk/gitea/racoon/venera/internal/webui"
 	"strconv"
 
-	"racoondev.tk/gitea/racoon/venera/internal/bot"
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/webui"
+
+	"github.com/racoon-devel/venera/internal/bot"
+	"github.com/racoon-devel/venera/internal/storage"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 func registerBotCommands() {
@@ -59,7 +60,7 @@ func taskHandler(args []string, replyID string) (*bot.Message, error) {
 		return nil, err
 	}
 
-	actions  := []types.Action{
+	actions := []types.Action{
 		types.Action{Title: "Stop", Command: fmt.Sprintf("/stop %s", taskID)},
 		types.Action{Title: "Delete", Command: fmt.Sprintf("/delete %s", taskID)},
 	}

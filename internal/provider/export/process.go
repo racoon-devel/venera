@@ -8,11 +8,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"sync/atomic"
 	"time"
+
+	"github.com/racoon-devel/venera/internal/storage"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
 const (

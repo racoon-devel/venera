@@ -7,7 +7,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
 const MyAge = 28

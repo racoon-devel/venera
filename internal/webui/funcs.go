@@ -5,9 +5,9 @@ import (
 	"html/template"
 	"time"
 
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/utils"
 
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 func tsToHumanReadable(ts time.Duration) string {

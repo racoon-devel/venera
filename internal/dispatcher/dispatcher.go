@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
 	"sort"
 	"sync"
 	"time"
 
+	"github.com/racoon-devel/venera/internal/utils"
+
 	"github.com/ccding/go-logging/logging"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	"racoondev.tk/gitea/racoon/venera/internal/provider"
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/webui"
+	"github.com/racoon-devel/venera/internal/provider"
+	"github.com/racoon-devel/venera/internal/storage"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/webui"
 )
 
 var dispatcher struct {

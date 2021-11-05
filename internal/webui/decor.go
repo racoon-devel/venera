@@ -3,8 +3,8 @@ package webui
 import (
 	"fmt"
 
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
 func DecorPerson(person *types.Person) string {

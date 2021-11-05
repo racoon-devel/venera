@@ -42,7 +42,7 @@ WORKDIR "/var/lib/venera"
 COPY content/ .
 
 # Build venera
-WORKDIR /go/src/racoondev.tk/gitea/racoon/venera
+WORKDIR /go/src/github.com/racoon-devel/venera
 COPY . .
 ENV GOBIN=/go/bin
 RUN go install -v ./venera.go && rm -rf *

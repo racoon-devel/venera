@@ -8,16 +8,16 @@ import (
 	"github.com/ccding/go-logging/logging"
 	"github.com/gorilla/mux"
 
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 type searchSettings struct {
 	types.SearchSettings
-	Tel       string
-	APIToken  string
+	Tel          string
+	APIToken     string
 	RefreshToken string
-	Latitude  float32
-	Longitude float32
+	Latitude     float32
+	Longitude    float32
 }
 
 // TinderProvider - provider for searching people in Tinder

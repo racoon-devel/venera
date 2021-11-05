@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
 const (

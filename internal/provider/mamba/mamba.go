@@ -7,7 +7,7 @@ import (
 	"github.com/ccding/go-logging/logging"
 	"github.com/gorilla/mux"
 
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 type searchSettings struct {
@@ -65,7 +65,7 @@ func (provider MambaProvider) GetResultActions(result *types.PersonRecord) []typ
 	return []types.Action{
 		{
 			Title: "Open",
-			Link: template.URL(result.Person.Link),
+			Link:  template.URL(result.Person.Link),
 		},
 	}
 }

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/ccding/go-logging/logging"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/utils"
 
 	"github.com/BurntSushi/toml"
 )
