@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
+	tindergo "github.com/racoon-devel/TinderGo"
 	"github.com/racoon-devel/venera/internal/types"
-	"github.com/racoon-devel/venera/tindergo"
 )
 
 func parseField(field map[string]interface{}) string {

@@ -11,7 +11,8 @@ import (
 	"github.com/racoon-devel/venera/internal/storage"
 	"github.com/racoon-devel/venera/internal/types"
 	"github.com/racoon-devel/venera/internal/utils"
-	"github.com/racoon-devel/venera/tindergo"
+
+	tindergo "github.com/racoon-devel/TinderGo"
 )
 
 const (

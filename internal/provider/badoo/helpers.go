@@ -9,6 +9,7 @@ import (
 	"github.com/racoon-devel/venera/internal/provider/badoo/badoogo"
 	"github.com/racoon-devel/venera/internal/types"
 	"github.com/racoon-devel/venera/internal/utils"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
