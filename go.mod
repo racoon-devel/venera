@@ -23,20 +23,24 @@ require (
 
 require (
 	github.com/ccding/go-config-reader v0.0.0-20130817225950-8b6c2b50197f // indirect
+	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/elazarl/goproxy v0.0.0-20210801061803-8e322dfb79c4 // indirect
 	github.com/gobwas/httphead v0.0.0-20180130184737-2c6c146eadee // indirect
 	github.com/gobwas/pool v0.2.0 // indirect
 	github.com/gobwas/ws v1.0.2 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/knq/sysutil v0.0.0-20191005231841-15668db23d08 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lib/pq v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.0 // indirect
+	github.com/mxschmitt/playwright-go v0.1400.0 // indirect
 	github.com/parnurzeal/gorequest v0.2.16 // indirect
 	github.com/pkg/errors v0.8.0 // indirect
 	github.com/smartystreets/goconvey v1.7.2 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	golang.org/x/sys v0.0.0-20191115151921-52ab43148777 // indirect
+	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	moul.io/http2curl v1.0.0 // indirect
 )
