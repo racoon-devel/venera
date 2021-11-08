@@ -15,11 +15,14 @@ var env *playwright.Playwright
 type Navigator struct {
 	browser playwright.Browser
 	page    playwright.Page
+	ctx     playwright.BrowserContext
 
 	log      *logging.Logger
 	err      error
 	batch    string
 	dumpPath string
+
+	headers map[string]string
 }
 
 func Open(log *logging.Logger, url string) (n *Navigator, err error) {
@@ -34,7 +37,16 @@ func Open(log *logging.Logger, url string) (n *Navigator, err error) {
 		return
 	}
 
-	if b.page, err = b.browser.NewPage(); err != nil {
+	b.ctx, err = b.browser.NewContext(playwright.BrowserNewContextOptions{
+		Locale:      playwright.String("ru-RU"),
+		Permissions: []string{"geolocation"},
+	})
+
+	if err != nil {
+		return
+	}
+
+	if b.page, err = b.ctx.NewPage(); err != nil {
 		return
 	}
 
@@ -45,6 +57,14 @@ func Open(log *logging.Logger, url string) (n *Navigator, err error) {
 	}
 
 	b.page.SetDefaultTimeout(defaultTimeout)
+	b.page.On("request", func(request playwright.Request) {
+		b.catchRequest(request)
+	})
+	b.page.On("response", func(response playwright.Response) {
+		b.catchResponse(response)
+	})
+
+	b.headers = make(map[string]string)
 
 	n = b
 	return
@@ -114,7 +134,17 @@ func (n *Navigator) Fetch(selector string, output *string) *Navigator {
 			*output, n.err = s.InnerText()
 		}
 	}
-	n.checkError("Click")
+	n.checkError("Fetch")
+	return n
+}
+
+func (n *Navigator) Wait(selector string) *Navigator {
+	if n.err != nil {
+		return n
+	}
+	n.log.Debugf("%s: waiting '%s'...", n.batch, selector)
+	_, n.err = n.page.WaitForSelector(selector)
+	n.checkError("Wait")
 	return n
 }
 
@@ -149,4 +179,23 @@ func (n *Navigator) Sleep(d time.Duration) *Navigator {
 	n.log.Debugf("%s: waiting for %+v", n.batch, d)
 	<-time.After(d)
 	return n
+}
+
+func (n *Navigator) CaptureHeaders(headers map[string]string) *Navigator {
+	for h, v := range n.headers {
+		headers[h] = v
+	}
+
+	return n
+}
+
+func (n *Navigator) catchRequest(request playwright.Request) {
+	headers := request.Headers()
+	for h, v := range headers {
+		n.headers[h] = v
+	}
+}
+
+func (n *Navigator) catchResponse(response playwright.Response) {
+
 }

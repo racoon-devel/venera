@@ -12,6 +12,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/jinzhu/gorm v1.9.11
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/mxschmitt/playwright-go v0.1400.0
 	github.com/oliamb/cutter v0.2.2
 	github.com/phf/go-queue v0.0.0-20170504031614-9abe38d0371d
 	github.com/racoon-devel/TinderGo v0.0.0-20191127201857-973ffd677619
@@ -35,7 +36,6 @@ require (
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lib/pq v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.0 // indirect
-	github.com/mxschmitt/playwright-go v0.1400.0 // indirect
 	github.com/parnurzeal/gorequest v0.2.16 // indirect
 	github.com/pkg/errors v0.8.0 // indirect
 	github.com/smartystreets/goconvey v1.7.2 // indirect
