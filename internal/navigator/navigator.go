@@ -72,6 +72,7 @@ func Open(log *logging.Logger, url string) (n *Navigator, err error) {
 
 func (n *Navigator) Batch(title string) *Navigator {
 	n.batch = title
+	n.headers = make(map[string]string)
 	return n
 }
 
