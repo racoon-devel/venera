@@ -205,6 +205,11 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 				return err
 			})
 			atomic.AddUint32(&session.state.Stat.Passed, 1)
+
+			// все равно сохраним в базу для последующего rerate
+			if stored == nil {
+				_, _ = storage.AppendPerson(&person, session.taskID, session.provider.ID())
+			}
 		}
 	}
 }
