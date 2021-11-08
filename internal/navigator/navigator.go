@@ -200,3 +200,7 @@ func (n *Navigator) catchRequest(request playwright.Request) {
 func (n *Navigator) catchResponse(response playwright.Response) {
 
 }
+
+func (n *Navigator) Close() {
+	_ = n.browser.Close()
+}
