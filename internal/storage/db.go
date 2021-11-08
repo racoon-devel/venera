@@ -131,3 +131,9 @@ func SearchPerson(providerID, userID string) *types.PersonRecord {
 
 	return &record
 }
+
+func UpdateRating(personID uint, rating int) {
+	record := types.PersonRecord{}
+	record.ID = personID
+	db.Model(&record).Update("rating", rating)
+}

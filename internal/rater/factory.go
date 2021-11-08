@@ -20,7 +20,7 @@ var (
 )
 
 func NewRater(raterID string, configuration string, log *logging.Logger, settings *types.SearchSettings) types.Rater {
-	log.Debugf("Intancing rater '%s'", raterID)
+	log.Debugf("Instancing rater '%s'", raterID)
 
 	creator, ok := factoryMethods[raterID]
 	if !ok {
