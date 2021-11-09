@@ -137,3 +137,13 @@ func UpdateRating(personID uint, rating int) {
 	record.ID = personID
 	db.Model(&record).Update("rating", rating)
 }
+
+func UpdatePerson(person *types.PersonRecord) error {
+	data, err := json.Marshal(person.Person)
+	if err != nil {
+		return err
+	}
+	person.Description = string(data)
+	db.Save(&person)
+	return nil
+}

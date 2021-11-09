@@ -66,8 +66,11 @@ func main() {
 		}
 		for _, p := range persons {
 			rating := r.Rate(&p.Person)
-			storage.UpdateRating(p.ID, rating)
 			logger.Infof("Person '%s' rating change %d => %d", p.Person.Name, p.Rating, rating)
+			//storage.UpdateRating(p.ID, rating)
+			p.Rating = rating
+			storage.UpdatePerson(&p)
+
 		}
 		offset += uint(len(persons))
 		if offset >= total {
