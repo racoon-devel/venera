@@ -7,7 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 var db *gorm.DB
@@ -130,4 +130,20 @@ func SearchPerson(providerID, userID string) *types.PersonRecord {
 	}
 
 	return &record
+}
+
+func UpdateRating(personID uint, rating int) {
+	record := types.PersonRecord{}
+	record.ID = personID
+	db.Model(&record).Update("rating", rating)
+}
+
+func UpdatePerson(person *types.PersonRecord) error {
+	data, err := json.Marshal(person.Person)
+	if err != nil {
+		return err
+	}
+	person.Description = string(data)
+	db.Save(&person)
+	return nil
 }

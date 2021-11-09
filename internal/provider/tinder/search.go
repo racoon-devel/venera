@@ -6,12 +6,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"racoondev.tk/gitea/racoon/venera/internal/bot"
-	"racoondev.tk/gitea/racoon/venera/internal/rater"
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
-	"racoondev.tk/gitea/racoon/venera/tindergo"
+	"github.com/racoon-devel/venera/internal/rater"
+	"github.com/racoon-devel/venera/internal/storage"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/utils"
+
+	tindergo "github.com/racoon-devel/TinderGo"
 )
 
 const (
@@ -24,62 +24,32 @@ const (
 
 	delaySessionMin = 1 * time.Hour
 	delaySessionMax = 2 * time.Hour
+
+	delayDecideMin = 3 * time.Second
+	delayDecideMax = 20 * time.Second
+
+	apiTokenRefreshInterval = 2 * 24 * time.Hour
 )
 
 func (session *tinderSearchSession) auth(ctx context.Context) error {
-	auth := newTinderAuth(session.state.Search.Tel)
-
-	session.mutex.Lock()
-	auth.RefreshToken = session.state.Search.RefreshToken
-	session.mutex.Unlock()
-
-	err := auth.Login()
+	auth := newTinderAuth(session.state.Search.Login, session.state.Search.Password)
+	err := auth.SignIn(session.log)
 	if err == nil {
 		session.mutex.Lock()
 		session.state.Search.APIToken = auth.APIToken
-		session.state.Search.RefreshToken = auth.RefreshToken
+		session.state.LastAuthTime = time.Now()
 		session.api.SetAPIToken(auth.APIToken)
 		session.mutex.Unlock()
-
 		return nil
 	} else {
 		session.log.Warnf("Login failed: %+v", err)
 	}
 
-	for {
-		auth := newTinderAuth(session.state.Search.Tel)
-		if err := auth.RequestCode(); err != nil {
-			return err
-		}
+	return err
+}
 
-		code, err := bot.Request(ctx, "Require Tinder authentification token")
-		if err != nil {
-			utils.Delay(ctx, utils.Range{Min: delayBatchMin, Max: delayBatchMax})
-			continue
-		}
-
-		if err := auth.ValidateCode(code); err != nil {
-			session.raise(err)
-			utils.Delay(ctx, utils.Range{Min: delayBatchMin, Max: delayBatchMax})
-			continue
-		}
-
-		if err := auth.Login(); err != nil {
-			session.raise(err)
-			utils.Delay(ctx, utils.Range{Min: delayBatchMin, Max: delayBatchMax})
-			continue
-		}
-
-		session.log.Infof("Tinder API token retrieved: %s", auth.APIToken)
-
-		session.mutex.Lock()
-		session.state.Search.APIToken = auth.APIToken
-		session.state.Search.RefreshToken = auth.RefreshToken
-		session.api.SetAPIToken(auth.APIToken)
-		session.mutex.Unlock()
-
-		return nil
-	}
+func (session *tinderSearchSession) expired() bool {
+	return session.state.Search.APIToken == "" || time.Since(session.state.LastAuthTime) >= apiTokenRefreshInterval
 }
 
 func (session *tinderSearchSession) setup(ctx context.Context) {
@@ -110,7 +80,7 @@ func (session *tinderSearchSession) setup(ctx context.Context) {
 	pref := tindergo.SearchPreferences{
 		AgeFilterMin:   int(session.state.Search.AgeFrom),
 		AgeFilterMax:   int(session.state.Search.AgeTo),
-		DistanceFilter: 10,
+		DistanceFilter: int(session.state.Search.Distance),
 		GenderFilter:   1,
 	}
 	session.mutex.Unlock()
@@ -120,11 +90,25 @@ func (session *tinderSearchSession) setup(ctx context.Context) {
 	})
 }
 
+func (session *tinderSearchSession) retrySignIn(ctx context.Context) {
+	if session.expired() {
+		err := session.repeat(ctx, func() error {
+			return session.auth(ctx)
+		})
+		if err != nil {
+			session.raise(err)
+			return
+		}
+	}
+}
+
 func (session *tinderSearchSession) process(ctx context.Context) {
 	session.log.Debugf("Starting Tinder API Session....")
 
 	session.api = tindergo.New()
-	session.auth(ctx)
+	session.api.SetAPIToken(session.state.Search.APIToken)
+
+	session.retrySignIn(ctx)
 
 	session.mutex.Lock()
 	session.status = types.StatusRunning
@@ -149,6 +133,7 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 	session.setup(ctx)
 
 	for {
+		session.retrySignIn(ctx)
 		for i := 0; i < requestPerSession; i++ {
 			session.processBatch(ctx)
 			session.log.Info("tinder: processing batch finished")
@@ -158,15 +143,17 @@ func (session *tinderSearchSession) process(ctx context.Context) {
 		session.log.Info("tinder: processing session finished")
 		utils.Delay(ctx, utils.Range{Min: delaySessionMin, Max: delaySessionMax})
 
-		center := geoposition{session.state.Search.Latitude, session.state.Search.Longitude}
-		shiftPosition(center, &session.geo)
+		// Пока отключил "эмулятор ходьбы по городу"
 
-		session.repeat(ctx, func() error {
-			return session.api.UpdateLocation(
-				session.geo.Latitude,
-				session.geo.Longitude,
-			)
-		})
+		//center := geoposition{session.state.Search.Latitude, session.state.Search.Longitude}
+		//shiftPosition(center, &session.geo)
+
+		//session.repeat(ctx, func() error {
+		//	return session.api.UpdateLocation(
+		//		session.geo.Latitude,
+		//		session.geo.Longitude,
+		//	)
+		//})
 	}
 }
 
@@ -221,7 +208,14 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 				return err
 			})
 			atomic.AddUint32(&session.state.Stat.Passed, 1)
+
+			// все равно сохраним в базу для последующего rerate
+			if stored == nil {
+				_, _ = storage.AppendPerson(&person, session.taskID, session.provider.ID())
+			}
 		}
+
+		utils.Delay(ctx, utils.Range{Min: delayDecideMin, Max: delayDecideMax})
 	}
 }
 

@@ -2,11 +2,11 @@ package rater
 
 import (
 	"github.com/ccding/go-logging/logging"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 const (
-	IgnorePerson       = -100
+	IgnorePerson = -100
 )
 
 type raterCreator func(configuration string, log *logging.Logger, settings *types.SearchSettings) types.Rater
@@ -20,7 +20,7 @@ var (
 )
 
 func NewRater(raterID string, configuration string, log *logging.Logger, settings *types.SearchSettings) types.Rater {
-	log.Debugf("Intancing rater '%s'", raterID)
+	log.Debugf("Instancing rater '%s'", raterID)
 
 	creator, ok := factoryMethods[raterID]
 	if !ok {

@@ -1,4 +1,4 @@
-FROM golang:1.12.1
+FROM golang:1.17.1
 
 RUN wget "http://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-1.14.0.tar.gz" && \
    tar -zxv -C /usr/local/ -f libtensorflow-cpu-linux-x86_64-1.14.0.tar.gz && \
@@ -25,7 +25,9 @@ RUN apt-get update && apt-get install -y \
 	fonts-kacst \
 	fonts-symbola \
 	fonts-noto \
-	ttf-freefont \
+    libx11-xcb1 \
+    libxt6 \
+    libdbus-glib-1-2 \
 	--no-install-recommends \
 	&& apt-get purge --auto-remove -y curl gnupg \
 	&& rm -rf /var/lib/apt/lists/*
@@ -42,10 +44,10 @@ WORKDIR "/var/lib/venera"
 COPY content/ .
 
 # Build venera
-WORKDIR /go/src/racoondev.tk/gitea/racoon/venera
+WORKDIR /go/src/github.com/racoon-devel/venera
 COPY . .
 ENV GOBIN=/go/bin
-RUN go install -v ./venera.go && rm -rf *
+RUN go install -v ./app/venera/venera.go && rm -rf *
 
 CMD ["venera", "-verbose"]
 

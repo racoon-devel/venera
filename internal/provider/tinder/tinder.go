@@ -8,16 +8,17 @@ import (
 	"github.com/ccding/go-logging/logging"
 	"github.com/gorilla/mux"
 
-	"racoondev.tk/gitea/racoon/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/types"
 )
 
 type searchSettings struct {
 	types.SearchSettings
-	Tel       string
+	Login     string
+	Password  string
 	APIToken  string
-	RefreshToken string
 	Latitude  float32
 	Longitude float32
+	Distance  uint
 }
 
 // TinderProvider - provider for searching people in Tinder
@@ -35,7 +36,6 @@ func (provider TinderProvider) ID() string {
 }
 
 func (provider TinderProvider) SetupRouter(router *mux.Router) {
-	router.HandleFunc("/login", loginHandler).Methods("GET")
 }
 
 func (provider *TinderProvider) SetLogger(log *logging.Logger) {
@@ -43,7 +43,7 @@ func (provider *TinderProvider) SetLogger(log *logging.Logger) {
 }
 
 func (provider TinderProvider) CreateSearchSession(r *http.Request) (types.SearchSession, error) {
-	settings, auth, err := parseForm(r, false)
+	settings, err := parseForm(r, false)
 	if err != nil {
 		return nil, err
 	}
@@ -51,17 +51,6 @@ func (provider TinderProvider) CreateSearchSession(r *http.Request) (types.Searc
 	if err := settings.SearchSettings.Validate(); err != nil {
 		return nil, err
 	}
-
-	if err := auth.ValidateCode(auth.LoginCode); err != nil {
-		return nil, fmt.Errorf("Tinder auth failed: %+v", err)
-	}
-
-	if err := auth.Login(); err != nil {
-		return nil, fmt.Errorf("Tinder auth failed: %+v", err)
-	}
-
-	settings.APIToken = auth.APIToken
-	settings.RefreshToken = auth.RefreshToken
 
 	return provider.newSearchSession(settings), nil
 }

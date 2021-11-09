@@ -1,0 +1,20 @@
+version: '3.3'
+
+services:
+  database:
+    image: postgres:latest
+    restart: always
+    container_name: database
+    environment:
+      - POSTGRES_USER=venera
+      - POSTGRES_DATABASE=venera
+      - POSTGRES_PASSWORD=qweasd123
+
+  venera:
+    build: .
+    container_name: venera
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./configs/venera.docker.conf:/etc/venera/venera.conf

@@ -2,23 +2,24 @@ package rater
 
 import (
 	"fmt"
+	"math"
+
 	"github.com/BurntSushi/toml"
 	"github.com/ccding/go-logging/logging"
-	"math"
-	"racoondev.tk/gitea/racoon/venera/internal/rater/classifier"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/rater/classifier"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
 type mlConfig struct {
-	Threshold      float32
+	Threshold float32
 }
 
 type mlRater struct {
-	c          *classifier.Classifier
-	config     mlConfig
-	log        *logging.Logger
-	nextRater  types.Rater
+	c         *classifier.Classifier
+	config    mlConfig
+	log       *logging.Logger
+	nextRater types.Rater
 }
 
 func (r *mlRater) Init(log *logging.Logger, settings *types.SearchSettings) {

@@ -12,12 +12,12 @@ import (
 
 	"github.com/ccding/go-logging/logging"
 
-	"racoondev.tk/gitea/racoon/venera/internal/bot"
-	"racoondev.tk/gitea/racoon/venera/internal/storage"
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
-	"racoondev.tk/gitea/racoon/venera/internal/webui"
-	"racoondev.tk/gitea/racoon/venera/tindergo"
+	tindergo "github.com/racoon-devel/TinderGo"
+	"github.com/racoon-devel/venera/internal/bot"
+	"github.com/racoon-devel/venera/internal/storage"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/webui"
 )
 
 type tinderStat struct {
@@ -33,6 +33,7 @@ type tinderSessionState struct {
 	Top              []ListItem
 	Stat             tinderStat
 	LastSuperlikeUpd time.Time
+	LastAuthTime     time.Time
 	Matches          map[string]types.Person
 }
 
@@ -165,7 +166,7 @@ func (session *tinderSearchSession) Poll() {
 func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Request) (bool, error) {
 	if r.Method == "POST" {
 
-		search, _, err := parseForm(r, true)
+		search, err := parseForm(r, true)
 		if err != nil {
 			return false, err
 		}
@@ -179,6 +180,7 @@ func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Reques
 		session.state.Search.Dislikes = search.Dislikes
 		session.state.Search.Longitude = search.Longitude
 		session.state.Search.Latitude = search.Latitude
+		session.state.Search.Distance = search.Distance
 
 		return true, nil
 	}
@@ -191,6 +193,7 @@ func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Reques
 		AgeTo     uint
 		Latitude  float32
 		Longitude float32
+		Distance  uint
 	}
 
 	session.mutex.Lock()
@@ -201,6 +204,7 @@ func (session *tinderSearchSession) Update(w http.ResponseWriter, r *http.Reques
 		AgeTo:     session.state.Search.AgeTo,
 		Latitude:  session.state.Search.Latitude,
 		Longitude: session.state.Search.Longitude,
+		Distance:  session.state.Search.Distance,
 	}
 
 	ctx.Likes = utils.ListToString(session.state.Search.Likes)

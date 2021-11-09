@@ -4,18 +4,19 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"racoondev.tk/gitea/racoon/venera/internal/rater"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/racoon-devel/venera/internal/rater"
+
 	"github.com/ccding/go-logging/logging"
 	"github.com/gorilla/mux"
 
-	"racoondev.tk/gitea/racoon/venera/internal/provider"
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
-	"racoondev.tk/gitea/racoon/venera/internal/webui"
+	"github.com/racoon-devel/venera/internal/provider"
+	"github.com/racoon-devel/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/webui"
 )
 
 var log *logging.Logger

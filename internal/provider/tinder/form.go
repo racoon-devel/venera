@@ -6,42 +6,37 @@ import (
 	"strconv"
 	"strings"
 
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/utils"
 )
 
-func parseForm(r *http.Request, editMode bool) (*searchSettings, *tinderAuth, error) {
+func parseForm(r *http.Request, editMode bool) (*searchSettings, error) {
 	err := r.ParseForm()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	ctx := searchSettings{}
-	var auth *tinderAuth
 
 	if !editMode {
 
-		if len(r.Form["tel"]) != 1 || len(r.Form["tel"][0]) == 0 {
-			return nil, nil, fmt.Errorf("Field 'tel' must be not empty")
+		if len(r.Form["login"]) != 1 || len(r.Form["login"][0]) == 0 {
+			return nil, fmt.Errorf("field 'login' must be not empty")
 		}
-		ctx.Tel = r.Form["tel"][0]
+		ctx.Login = r.Form["login"][0]
 
-		auth = newTinderAuth(ctx.Tel)
-
-		//if len(r.Form["login_token"]) != 1 || len(r.Form["login_token"][0]) == 0 {
-		//	return nil, nil, fmt.Errorf("You must fill login code")
-		//}
-
-		//auth.LoginToken = r.Form["login_token"][0]
-
-		if len(r.Form["code"]) != 1 || len(r.Form["code"][0]) == 0 {
-			return nil, nil, fmt.Errorf("You must fill login code")
+		if len(r.Form["password"]) != 1 || len(r.Form["password"][0]) == 0 {
+			return nil, fmt.Errorf("you must fill login password")
 		}
+		ctx.Password = r.Form["password"][0]
 
-		auth.LoginCode = r.Form["code"][0]
+		if len(r.Form["rater"]) != 1 || len(r.Form["rater"][0]) == 0 {
+			return nil, fmt.Errorf("field 'rater' must be not empty")
+		}
+		ctx.Rater = r.Form["rater"][0]
 	}
 
 	if len(r.Form["likes"]) != 1 || len(r.Form["likes"][0]) == 0 {
-		return nil, nil, fmt.Errorf("Field 'likes' must be not empty")
+		return nil, fmt.Errorf("field 'likes' must be not empty")
 	}
 	ctx.Likes = strings.Split(r.Form["likes"][0], ",")
 	utils.TrimArray(ctx.Likes)
@@ -54,54 +49,55 @@ func parseForm(r *http.Request, editMode bool) (*searchSettings, *tinderAuth, er
 	}
 
 	if len(r.Form["ageFrom"]) != 1 || len(r.Form["ageFrom"][0]) == 0 {
-		return nil, nil, fmt.Errorf("Field 'ageFrom' must be not empty")
+		return nil, fmt.Errorf("field 'ageFrom' must be not empty")
 	}
 
 	if len(r.Form["ageTo"]) != 1 || len(r.Form["ageTo"][0]) == 0 {
-		return nil, nil, fmt.Errorf("Field 'ageTo' must be not empty")
+		return nil, fmt.Errorf("Field 'ageTo' must be not empty")
 	}
 
 	if len(r.Form["longitude"]) != 1 || len(r.Form["longitude"][0]) == 0 {
-		return nil, nil, fmt.Errorf("Field 'longitude' must be not empty")
+		return nil, fmt.Errorf("field 'longitude' must be not empty")
 	}
 
 	if len(r.Form["latitude"]) != 1 || len(r.Form["latitude"][0]) == 0 {
-		return nil, nil, fmt.Errorf("Field 'latitude' must be not empty")
-	}
-
-	if len(r.Form["rater"]) != 1 || len(r.Form["rater"][0]) == 0 {
-		return nil, nil, fmt.Errorf("Field 'rater' must be not empty")
+		return nil, fmt.Errorf("field 'latitude' must be not empty")
 	}
 
 	u, err := strconv.ParseUint(r.Form["ageFrom"][0], 10, 64)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Field 'ageFrom' must be integer")
+		return nil, fmt.Errorf("Field 'ageFrom' must be integer")
 	}
 
 	ctx.AgeFrom = uint(u)
 
 	u, err = strconv.ParseUint(r.Form["ageTo"][0], 10, 64)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Field 'ageTo' must be integer")
+		return nil, fmt.Errorf("field 'ageTo' must be integer")
 	}
 
 	ctx.AgeTo = uint(u)
 
 	f, err := strconv.ParseFloat(r.Form["latitude"][0], 32)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Field 'latitude' must be float")
+		return nil, fmt.Errorf("Field 'latitude' must be float")
 	}
 
 	ctx.Latitude = float32(f)
 
 	f, err = strconv.ParseFloat(r.Form["longitude"][0], 32)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Field 'Longitude' must be float")
+		return nil, fmt.Errorf("Field 'Longitude' must be float")
 	}
 
 	ctx.Longitude = float32(f)
 
-	ctx.Rater = r.Form["rater"][0]
+	u, err = strconv.ParseUint(r.Form["distance"][0], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("field 'distance' must be integer")
+	}
 
-	return &ctx, auth, nil
+	ctx.Distance = uint(u)
+
+	return &ctx, nil
 }

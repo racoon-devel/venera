@@ -13,11 +13,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-
 	"github.com/ccding/go-logging/logging"
 
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/webui"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/webui"
 )
 
 type exportStat struct {
@@ -117,10 +116,10 @@ func (session *exportSession) Poll() {
 
 func (session *exportSession) Update(w http.ResponseWriter, r *http.Request) (bool, error) {
 	var ctx struct {
-		Stat exportStat
+		Stat     exportStat
 		FileName string
-		Url template.URL
-		Ready bool
+		Url      template.URL
+		Ready    bool
 	}
 
 	ctx.Stat = session.state.Stat

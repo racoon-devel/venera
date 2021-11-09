@@ -10,14 +10,14 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"racoondev.tk/gitea/racoon/venera/internal/provider/badoo/badoogo"
+	"github.com/racoon-devel/venera/internal/provider/badoo/badoogo"
 
-	"racoondev.tk/gitea/racoon/venera/internal/utils"
+	"github.com/racoon-devel/venera/internal/utils"
 
 	"github.com/ccding/go-logging/logging"
 
-	"racoondev.tk/gitea/racoon/venera/internal/types"
-	"racoondev.tk/gitea/racoon/venera/internal/webui"
+	"github.com/racoon-devel/venera/internal/types"
+	"github.com/racoon-devel/venera/internal/webui"
 )
 
 type badooStat struct {
