@@ -47,6 +47,6 @@ COPY content/ .
 WORKDIR /go/src/github.com/racoon-devel/venera
 COPY . .
 ENV GOBIN=/go/bin
-RUN go install -v ./venera.go && rm -rf *
+RUN go install -v ./app/venera/venera.go && rm -rf *
 
 CMD ["venera", "-verbose"]

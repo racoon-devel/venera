@@ -25,6 +25,9 @@ const (
 	delaySessionMin = 1 * time.Hour
 	delaySessionMax = 2 * time.Hour
 
+	delayDecideMin = 3 * time.Second
+	delayDecideMax = 20 * time.Second
+
 	apiTokenRefreshInterval = 2 * 24 * time.Hour
 )
 
@@ -211,6 +214,8 @@ func (session *tinderSearchSession) processBatch(ctx context.Context) {
 				_, _ = storage.AppendPerson(&person, session.taskID, session.provider.ID())
 			}
 		}
+
+		utils.Delay(ctx, utils.Range{Min: delayDecideMin, Max: delayDecideMax})
 	}
 }
 
