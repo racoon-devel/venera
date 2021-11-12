@@ -51,9 +51,9 @@ func (a *tinderAuth) SignIn(log *logging.Logger) error {
 	headers := make(map[string]string)
 	err = nav.Batch("Sign in Tinder").
 		Goto("https://tinder.com").
-		Click(`//*[@id="q-274726726"]/div/div[1]/div/main/div[1]/div/div/div/div/header/div/div[2]/div[2]/a`).
+		Click(`//div[1]/div/div[1]/div/main/div[1]/div/div/div/div/header/div/div[2]/div[2]/a`).
 		Sleep(3 * time.Second).
-		Click(`//*[@id="q-53386290"]/div/div/div[1]/div/div[3]/span/div/div/button`).
+		Click(`//div[2]/div/div/div[1]/div/div[3]/span/div[1]/div/button`).
 		Sleep(5 * time.Second).
 		CaptureHeaders(headers).
 		Error()
