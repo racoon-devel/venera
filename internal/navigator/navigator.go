@@ -182,6 +182,10 @@ func (n *Navigator) Sleep(d time.Duration) *Navigator {
 	return n
 }
 
+func (n *Navigator) Address() string {
+	return n.page.URL()
+}
+
 func (n *Navigator) CaptureHeaders(headers map[string]string) *Navigator {
 	for h, v := range n.headers {
 		headers[h] = v

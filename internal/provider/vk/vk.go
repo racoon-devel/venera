@@ -1,7 +1,6 @@
 package vk
 
 import (
-	"errors"
 	"github.com/gorilla/mux"
 	"github.com/racoon-devel/venera/internal/types"
 	"html/template"
@@ -11,6 +10,13 @@ import (
 import (
 	"github.com/ccding/go-logging/logging"
 )
+
+type searchSettings struct {
+	types.SearchSettings
+	Login    string
+	Password string
+	City     string
+}
 
 type Provider struct {
 	log *logging.Logger
@@ -28,11 +34,29 @@ func (provider *Provider) SetLogger(log *logging.Logger) {
 }
 
 func (provider Provider) CreateSearchSession(r *http.Request) (types.SearchSession, error) {
-	return nil, errors.New("not implemented")
+	settings, err := parseForm(r, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := settings.SearchSettings.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &searchSession{
+		provider: provider,
+		log:      provider.log,
+		state:    sessionState{Search: *settings},
+	}, nil
 }
 
 func (provider Provider) RestoreSearchSession(state string) types.SearchSession {
-	return nil
+	session := &searchSession{
+		provider: provider,
+		log:      provider.log,
+	}
+	session.LoadState(state)
+	return session
 }
 
 func (provider Provider) GetResultActions(result *types.PersonRecord) []types.Action {

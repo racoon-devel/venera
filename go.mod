@@ -23,6 +23,7 @@ require (
 )
 
 require (
+	github.com/SevereCloud/vksdk/v2 v2.10.0 // indirect
 	github.com/ccding/go-config-reader v0.0.0-20130817225950-8b6c2b50197f // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/elazarl/goproxy v0.0.0-20210801061803-8e322dfb79c4 // indirect
@@ -41,6 +42,7 @@ require (
 	github.com/smartystreets/goconvey v1.7.2 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	golang.org/x/sys v0.0.0-20191115151921-52ab43148777 // indirect
+	golang.org/x/text v0.3.5 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	moul.io/http2curl v1.0.0 // indirect
 )
