@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"github.com/racoon-devel/venera/internal/provider/vk"
 
 	"github.com/racoon-devel/venera/internal/provider/badoo"
 	"github.com/racoon-devel/venera/internal/provider/export"
@@ -19,6 +20,7 @@ var (
 		"mamba":  new(mamba.MambaProvider),
 		"export": new(export.ExportProvider),
 		"badoo":  new(badoo.BadooProvider),
+		"vk":     new(vk.Provider),
 	}
 )
 
