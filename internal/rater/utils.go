@@ -26,6 +26,14 @@ func passThreshold(next types.Rater, thresholdType int, thresholdValue int) int 
 	return thresholdValue
 }
 
+func passNeedPhotos(next types.Rater, needPhotos bool) bool {
+	if next != nil {
+		return needPhotos || next.NeedPhotos()
+	}
+
+	return needPhotos
+}
+
 func propagateClose(next types.Rater) {
 	if next != nil {
 		next.Close()

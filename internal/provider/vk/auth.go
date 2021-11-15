@@ -11,10 +11,8 @@ import (
 	"time"
 )
 
-const appId = 6122372
-
 func (session *searchSession) signIn() error {
-	u := fmt.Sprintf("https://oauth.vk.com/authorize?client_id=%d&display=popup&redirect_uri=http://racoondev.tk/&scope=friends,wall&response_type=token&v=%s&state=123456&revoke=1", appId, api.Version)
+	u := fmt.Sprintf("https://oauth.vk.com/authorize?client_id=%d&display=popup&redirect_uri=http://racoondev.tk/&scope=friends,photos&response_type=token&v=%s&state=123456&revoke=1", appId, api.Version)
 	nav, err := navigator.Open(session.log, u)
 	if err != nil {
 		return err

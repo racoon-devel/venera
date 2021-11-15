@@ -33,6 +33,12 @@ func parseForm(r *http.Request, editMode bool) (*searchSettings, error) {
 			return nil, fmt.Errorf("field 'rater' must be not empty")
 		}
 		ctx.Rater = r.Form["rater"][0]
+
+		if len(r.Form["keywords"]) != 1 || len(r.Form["keywords"][0]) == 0 {
+			return nil, fmt.Errorf("field 'keywords' must be not empty")
+		}
+		ctx.Keywords = strings.Split(r.Form["keywords"][0], ",")
+		utils.TrimArray(ctx.Keywords)
 	}
 
 	if len(r.Form["likes"]) != 1 || len(r.Form["likes"][0]) == 0 {
@@ -48,12 +54,6 @@ func parseForm(r *http.Request, editMode bool) (*searchSettings, error) {
 		ctx.Dislikes = make([]string, 0)
 	}
 
-	if len(r.Form["keywords"]) != 1 || len(r.Form["keywords"][0]) == 0 {
-		return nil, fmt.Errorf("field 'keywords' must be not empty")
-	}
-	ctx.Keywords = strings.Split(r.Form["keywords"][0], ",")
-	utils.TrimArray(ctx.Keywords)
-
 	if len(r.Form["ageFrom"]) != 1 || len(r.Form["ageFrom"][0]) == 0 {
 		return nil, fmt.Errorf("field 'ageFrom' must be not empty")
 	}
@@ -65,6 +65,7 @@ func parseForm(r *http.Request, editMode bool) (*searchSettings, error) {
 	if len(r.Form["city"]) != 1 || len(r.Form["city"][0]) == 0 {
 		return nil, fmt.Errorf("field 'city' must be not empty")
 	}
+	ctx.City = r.Form["city"][0]
 
 	u, err := strconv.ParseUint(r.Form["ageFrom"][0], 10, 64)
 	if err != nil {

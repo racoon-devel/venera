@@ -43,6 +43,9 @@ func (provider Provider) CreateSearchSession(r *http.Request) (types.SearchSessi
 		return nil, err
 	}
 
+	settings.Keywords = append(settings.Keywords, "знакомства")
+	settings.Keywords = append(settings.Keywords, "знакомства "+settings.City)
+
 	return &searchSession{
 		provider: provider,
 		log:      provider.log,
@@ -55,7 +58,9 @@ func (provider Provider) RestoreSearchSession(state string) types.SearchSession 
 		provider: provider,
 		log:      provider.log,
 	}
-	session.LoadState(state)
+	if session.LoadState(state) == nil {
+		session.log.Debugf("[vk] state: %+v", session.state)
+	}
 	return session
 }
 

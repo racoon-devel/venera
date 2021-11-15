@@ -100,6 +100,10 @@ func (r *mlRater) Threshold(threshold int) int {
 	return passThreshold(r.nextRater, threshold, int(math.Ceil(float64(r.config.Threshold)*100)))
 }
 
+func (r *mlRater) NeedPhotos() bool {
+	return passNeedPhotos(r.nextRater, true)
+}
+
 func (r *mlRater) Close() {
 	r.c.Close()
 	propagateClose(r.nextRater)

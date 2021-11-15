@@ -57,5 +57,6 @@ type Rater interface {
 	Rate(person *Person) int
 	Next(nextRater Rater) Rater
 	Threshold(threshold int) int
+	NeedPhotos() bool
 	Close()
 }

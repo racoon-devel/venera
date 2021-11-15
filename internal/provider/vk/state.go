@@ -3,8 +3,14 @@ package vk
 import "time"
 
 const (
+	// начальное состояние
+	stateInitialize = iota
+
 	// просто поиск по людям
-	stateUserSearch = iota
+	stateUserSearch
+
+	// хитрый поиск по именам
+	stateNameUserSearch
 
 	// поиск групп по интересам
 	stateGroupSearch
@@ -19,13 +25,32 @@ const (
 	stateFreeSearch
 )
 
+type commonData struct {
+	CountryID int
+	CityID    int
+}
+
 type userSearch struct {
+	Offset      uint32
+	ReverseSort bool
+}
+
+type nameUserSearch struct {
+	NameIndex   int
+	Offset      uint32
+	ReverseSort bool
 }
 
 type groupSearch struct {
+	KeywordIndex int
+	Offset       int
+	Groups       []int
 }
 
 type inGroupSearch struct {
+	GroupIndex  int
+	Offset      uint32
+	ReverseSort bool
 }
 
 type friendSearch struct {
@@ -34,14 +59,26 @@ type friendSearch struct {
 type freeSearch struct {
 }
 
+type vkStat struct {
+	Retrieved uint32
+	Saved     uint32
+	Errors    uint32
+	Groups    uint32
+}
+
 type sessionState struct {
-	Search        searchSettings
-	AccessToken   string
-	LastAuthTime  time.Time
-	State         int
-	UserSearch    userSearch
-	GroupSearch   groupSearch
-	InGroupSearch inGroupSearch
-	FriendSearch  friendSearch
-	FreeSearch    freeSearch
+	Search       searchSettings
+	AccessToken  string
+	LastAuthTime time.Time
+
+	State int
+
+	Stat           vkStat
+	CommonData     commonData
+	UserSearch     userSearch
+	NameUserSearch nameUserSearch
+	GroupSearch    groupSearch
+	InGroupSearch  inGroupSearch
+	FriendSearch   friendSearch
+	FreeSearch     freeSearch
 }
