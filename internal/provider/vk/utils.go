@@ -29,7 +29,7 @@ func (session *searchSession) try(f func() error) bool {
 			return true
 		}
 
-		if errors.As(err, e) {
+		if errors.As(err, &e) {
 			switch e.Code {
 			case api.ErrTooMany:
 				utils.Delay(session.ctx, utils.Range{
@@ -52,6 +52,17 @@ func (session *searchSession) try(f func() error) bool {
 					Min: 24 * time.Hour,
 					Max: 25 * time.Hour,
 				})
+			case api.ErrAuth:
+				utils.Delay(session.ctx, utils.Range{
+					Min: 1 * time.Second,
+					Max: 20 * time.Second,
+				})
+				if err = session.signIn(); err != nil {
+					session.raise(err)
+					return false
+				}
+			case api.ErrUserDeleted:
+				return true
 			default:
 				session.raise(err)
 				return false

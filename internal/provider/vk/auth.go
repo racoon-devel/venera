@@ -29,8 +29,6 @@ func (session *searchSession) signIn() error {
 		Sleep(2 * time.Second).
 		Click(`//*[@id="oauth_wrap_content"]/div[3]/div/div[1]/button[1]`).
 		Sleep(2 * time.Second).
-		TracePage("vk.html").
-		Screenshot("vk.jpg").
 		Error()
 	if err != nil {
 		return err
@@ -67,6 +65,8 @@ func (session *searchSession) signIn() error {
 	session.mutex.Lock()
 	session.state.AccessToken = matched[1]
 	session.state.LastAuthTime = time.Now()
+	session.api = api.NewVK(session.state.AccessToken)
+	session.api.Limit = api.LimitUserToken
 	session.mutex.Unlock()
 
 	session.log.Debugf("VK access_token = %s", matched[1])

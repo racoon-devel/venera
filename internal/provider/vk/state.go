@@ -18,9 +18,6 @@ const (
 	// поиск в группах
 	stateSearchInGroups
 
-	// поиск по друзьям
-	stateFriendsSearch
-
 	// глубокий поиск
 	stateFreeSearch
 )
@@ -53,10 +50,8 @@ type inGroupSearch struct {
 	ReverseSort bool
 }
 
-type friendSearch struct {
-}
-
 type freeSearch struct {
+	UserID int
 }
 
 type vkStat struct {
@@ -79,6 +74,5 @@ type sessionState struct {
 	NameUserSearch nameUserSearch
 	GroupSearch    groupSearch
 	InGroupSearch  inGroupSearch
-	FriendSearch   friendSearch
 	FreeSearch     freeSearch
 }

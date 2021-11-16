@@ -15,5 +15,6 @@ const (
 	maxGroupSearchLimit     = 50
 	expiredAccountThreshold = 15 * 24 * time.Hour
 
-	searchFields = "status,personal,interests,music,movies,tv,games,about,books,quotes,occupation,photo_max_orig,last_seen,bdate"
+	searchFields          = "sex,personal,interests,music,movies,tv,games,about,books,quotes,occupation,photo_max_orig,last_seen,bdate"
+	friendsLimitThreshold = 500
 )

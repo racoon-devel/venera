@@ -29,7 +29,7 @@ func (session *searchSession) process(ctx context.Context) {
 	defer session.rater.Close()
 	session.mutex.Unlock()
 
-	for session.status != types.StatusError {
+	for session.status == types.StatusRunning {
 		switch session.state.State {
 		case stateInitialize:
 			session.initialize()
@@ -41,6 +41,8 @@ func (session *searchSession) process(ctx context.Context) {
 			session.groupSearch()
 		case stateSearchInGroups:
 			session.searchInGroups()
+		case stateFreeSearch:
+			session.freeSearch()
 		default:
 			panic("not implemented")
 		}
@@ -51,11 +53,19 @@ func (session *searchSession) process(ctx context.Context) {
 
 func (session *searchSession) initialize() {
 	var country, city int
-	session.try(func() error {
+	ok := session.try(func() error {
 		var err error
 		country, city, err = session.getLocationIDs()
 		return err
 	})
+	if !ok {
+		return
+	}
+
+	if err := storage.RawDB().AutoMigrate(&vkUserRecord{}).Error; err != nil {
+		session.raise(err)
+		return
+	}
 
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
@@ -87,11 +97,14 @@ func (session *searchSession) userSearch() {
 	session.log.Debugf("[vk] global searching request, offset = %d, reverse sort = %b", state.Offset, state.ReverseSort)
 
 	var resp api.UsersSearchResponse
-	session.try(func() error {
+	ok := session.try(func() error {
 		var err error
 		resp, err = session.api.UsersSearch(p)
 		return err
 	})
+	if !ok {
+		return
+	}
 
 	session.log.Debugf("[vk] found users: %d", len(resp.Items))
 
@@ -133,11 +146,14 @@ func (session *searchSession) nameUserSearch() {
 	session.log.Debugf("[vk] search by name '%s' request, offset = %d, reverse sort = %b", womenNames[state.NameIndex], state.Offset, state.ReverseSort)
 
 	var resp api.UsersSearchResponse
-	session.try(func() error {
+	ok := session.try(func() error {
 		var err error
 		resp, err = session.api.UsersSearch(p)
 		return err
 	})
+	if !ok {
+		return
+	}
 
 	session.log.Debugf("[vk] found users: %d", len(resp.Items))
 
@@ -174,11 +190,14 @@ func (session *searchSession) groupSearch() {
 
 	session.log.Debugf("[vk] search groups by '%s' request", session.state.Search.Keywords[state.KeywordIndex])
 	var resp api.GroupsSearchResponse
-	session.try(func() error {
+	ok := session.try(func() error {
 		var err error
 		resp, err = session.api.GroupsSearch(p)
 		return err
 	})
+	if !ok {
+		return
+	}
 
 	session.log.Debugf("[vk] retrieved groups: %d", len(resp.Items))
 
@@ -222,11 +241,14 @@ func (session *searchSession) searchInGroups() {
 	}
 
 	var resp api.UsersSearchResponse
-	session.try(func() error {
+	ok := session.try(func() error {
 		var err error
 		resp, err = session.api.UsersSearch(p)
 		return err
 	})
+	if !ok {
+		return
+	}
 
 	session.log.Debugf("[vk] found users: %d", len(resp.Items))
 
@@ -243,27 +265,101 @@ func (session *searchSession) searchInGroups() {
 		} else {
 			state.GroupIndex++
 			if state.GroupIndex >= len(session.state.GroupSearch.Groups) {
-				session.state.State = stateFriendsSearch
-				session.log.Info("[vk] step 5. Search by friends...")
+				session.state.State = stateFreeSearch
+				session.log.Info("[vk] step 5. Free search...")
 			}
 		}
 	}
 	session.mutex.Unlock()
 }
 
+func (session *searchSession) freeSearch() {
+	state := &session.state.FreeSearch
+	userID := state.UserID
+	p := api.Params{
+		"fields": "sex,bdate,city,last_seen,relation",
+	}
+	if state.UserID != 0 {
+		p["user_id"] = userID
+	}
+
+	var resp api.FriendsGetFieldsResponse
+	ok := session.try(func() error {
+		var err error
+		resp, err = session.api.FriendsGetFields(p)
+		return err
+	})
+	if !ok {
+		return
+	}
+
+	session.log.Debugf("[vk] friends fetched: %d", len(resp.Items))
+
+	for _, friend := range resp.Items {
+		if !friend.IsClosed && friend.City.ID == session.state.CommonData.CityID {
+			if session.isRateableUser(&friend.UsersUser) && !dbContains(friend.ID) {
+				session.fetchUser(friend.ID)
+			}
+			dbAdd(friend.ID)
+		}
+	}
+
+	if userID != 0 {
+		dbRemove(state.UserID)
+	}
+
+	userID, ok = dbFetchFirst()
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	if !ok {
+		session.status = types.StatusDone
+		return
+	}
+	state.UserID = userID
+}
+
+func (session *searchSession) fetchUser(ID int) {
+	p := api.Params{
+		"user_ids": ID,
+		"fields":   searchFields + ",counters",
+	}
+
+	var resp api.UsersGetResponse
+	ok := session.try(func() error {
+		var err error
+		resp, err = session.api.UsersGet(p)
+		return err
+	})
+	if !ok || len(resp) == 0 {
+		return
+	}
+
+	if resp[0].Counters.Friends >= friendsLimitThreshold {
+		session.log.Warnf("[vk] skip person '%s %s', because friends limit reached [ %d > %d ]", resp[0].FirstName, resp[0].LastName, resp[0].Counters.Friends, friendsLimitThreshold)
+		return
+	}
+
+	session.rateUser(&resp[0])
+}
+
 func (session *searchSession) rateUser(u *object.UsersUser) {
+	userName := u.FirstName + " " + u.LastName
 	// private-аккануты не годятся
 	if u.IsClosed && !u.CanAccessClosed {
+		session.log.Debugf("[vk] skip person '%s', because account has private profile", userName)
 		return
 	}
 
 	// фильтруем устаревшие аккаунты
 	if time.Since(time.Unix(int64(u.LastSeen.Time), 0)) >= expiredAccountThreshold {
+		session.log.Debugf("[vk] skip person '%s', because account is expired", userName)
 		return
 	}
 
 	// если такой пользователь уже есть в базе, игнорируем
 	if storage.SearchPerson(session.provider.ID(), strconv.Itoa(u.ID)) != nil {
+		session.log.Debugf("[vk] skip person '%s', because already rated", userName)
 		return
 	}
 
@@ -286,7 +382,7 @@ func (session *searchSession) rateUser(u *object.UsersUser) {
 		}
 	}
 
-	session.log.Debugf("rate of '%s': %d", person.Name, rating)
+	session.log.Debugf("[vk] '%s' rating: %d", person.Name, rating)
 
 	// проверка, не остановили ли задачу
 	session.checkStop()

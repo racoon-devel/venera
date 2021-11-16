@@ -3,6 +3,7 @@ package vk
 import (
 	"fmt"
 	"github.com/SevereCloud/vksdk/v2/object"
+	"github.com/racoon-devel/venera/internal/storage"
 	"github.com/racoon-devel/venera/internal/types"
 	"strconv"
 	"time"
@@ -12,6 +13,29 @@ func bioAdd(p *types.Person, category string, content string) {
 	if len(content) != 0 {
 		p.Bio += fmt.Sprintf("%s: %s\n", category, content)
 	}
+}
+
+func (session *searchSession) isRateableUser(user *object.UsersUser) bool {
+	age := getAge(user.Bdate)
+	if age != 0 && (age < session.state.Search.AgeFrom || age > session.state.Search.AgeTo) {
+		return false
+	}
+	if user.City.ID != 0 && user.City.ID != session.state.CommonData.CityID {
+		return false
+	}
+	return user.Sex == sexWoman &&
+		(user.Relation == object.UserRelationSingle || user.Relation == object.UserRelationActivelySearching) &&
+		time.Since(time.Unix(int64(user.LastSeen.Time), 0)) < expiredAccountThreshold &&
+		storage.SearchPerson(session.provider.ID(), strconv.Itoa(user.ID)) == nil
+}
+
+func getAge(birthday string) uint {
+	if len(birthday) != 0 {
+		if date, err := time.Parse("2.1.2006", birthday); err == nil {
+			return uint(time.Since(date).Hours() / (24. * 365))
+		}
+	}
+	return 0
 }
 
 func convertPersonRecord(u *object.UsersUser) *types.Person {
@@ -91,11 +115,7 @@ func convertPersonRecord(u *object.UsersUser) *types.Person {
 	p.Photo = make([]string, 1)
 	p.Photo[0] = u.PhotoMaxOrig
 
-	if len(u.Bdate) != 0 {
-		if date, err := time.Parse("2.1.2006", u.Bdate); err == nil {
-			p.Age = uint(time.Since(date).Hours() / (24. * 365))
-		}
-	}
+	p.Age = getAge(u.Bdate)
 
 	return p
 }
