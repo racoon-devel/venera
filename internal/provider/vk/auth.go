@@ -65,8 +65,7 @@ func (session *searchSession) signIn() error {
 	session.mutex.Lock()
 	session.state.AccessToken = matched[1]
 	session.state.LastAuthTime = time.Now()
-	session.api = api.NewVK(session.state.AccessToken)
-	session.api.Limit = api.LimitUserToken
+	session.createApiEngine()
 	session.mutex.Unlock()
 
 	session.log.Debugf("VK access_token = %s", matched[1])

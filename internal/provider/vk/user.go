@@ -103,14 +103,14 @@ func convertPersonRecord(u *object.UsersUser) *types.Person {
 		p.Bio += "слава и влияние\n"
 	}
 
-	bioAdd(p, "О себе", u.About)
-	bioAdd(p, "Интересы", u.Interests)
-	bioAdd(p, "Книги", u.Books)
-	bioAdd(p, "Музыка", u.Music)
-	bioAdd(p, "Фильмы", u.Movies)
-	bioAdd(p, "Сериалы", u.Tv)
-	bioAdd(p, "Игры", u.Games)
-	bioAdd(p, "Цитаты", u.Quotes)
+	bioAdd(p, "About", u.About)
+	bioAdd(p, "Interests", u.Interests)
+	bioAdd(p, "Books", u.Books)
+	bioAdd(p, "Music", u.Music)
+	bioAdd(p, "Movies", u.Movies)
+	bioAdd(p, "Series", u.Tv)
+	bioAdd(p, "Games", u.Games)
+	bioAdd(p, "Quotes", u.Quotes)
 
 	p.Photo = make([]string, 1)
 	p.Photo[0] = u.PhotoMaxOrig

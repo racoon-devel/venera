@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/SevereCloud/vksdk/v2/api"
 	"github.com/SevereCloud/vksdk/v2/object"
+	"github.com/racoon-devel/venera/internal/bot"
 	"github.com/racoon-devel/venera/internal/types"
 	"github.com/racoon-devel/venera/internal/utils"
 	"strconv"
@@ -21,55 +22,73 @@ func (session *searchSession) raise(err error) {
 	atomic.AddUint32(&session.state.Stat.Errors, 1)
 }
 
-func (session *searchSession) try(f func() error) bool {
-	for {
-		var e *api.Error
-		err := f()
-		if err == nil {
-			return true
-		}
+func injectCaptcha(captchaText, captchaSID string, params ...api.Params) {
+	if len(params) > 0 {
+		params[0].CaptchaSID(captchaSID)
+		params[0].CaptchaKey(captchaText)
+	}
+}
 
-		if errors.As(err, &e) {
-			switch e.Code {
-			case api.ErrTooMany:
-				utils.Delay(session.ctx, utils.Range{
-					Min: time.Second,
-					Max: 2 * time.Second,
-				})
-			case api.ErrFlood:
-				session.log.Warn("[vk] flood detection alert")
-				utils.Delay(session.ctx, utils.Range{
-					Min: 1 * time.Minute,
-					Max: 1 * time.Hour,
-				})
-			case api.ErrCaptcha:
-				session.log.Warnf("[vk] captcha required: %s %s", e.CaptchaSID, e.CaptchaImg)
-				// TODO: captcha handling
-				return false
-			case api.ErrRateLimit:
-				session.log.Warn("[vk] request rate limit reached")
-				utils.Delay(session.ctx, utils.Range{
-					Min: 24 * time.Hour,
-					Max: 25 * time.Hour,
-				})
-			case api.ErrAuth:
-				utils.Delay(session.ctx, utils.Range{
-					Min: 1 * time.Second,
-					Max: 20 * time.Second,
-				})
-				if err = session.signIn(); err != nil {
-					session.raise(err)
-					return false
-				}
-			case api.ErrUserDeleted:
-				return true
-			default:
-				session.raise(err)
-				return false
+func (session *searchSession) createApiEngine() {
+	session.api = api.NewVK(session.state.AccessToken)
+	session.api.Limit = api.LimitUserToken
+	defaultHandler := session.api.Handler
+	session.api.Handler = func(method string, params ...api.Params) (api.Response, error) {
+		for {
+			var e *api.Error
+			resp, err := defaultHandler(method, params...)
+			if err == nil {
+				return resp, err
 			}
-		} else {
-			session.raise(err)
-			return false
+			if errors.As(err, &e) {
+				switch e.Code {
+				case api.ErrTooMany:
+					utils.Delay(session.ctx, utils.Range{
+						Min: time.Second,
+						Max: 2 * time.Second,
+					})
+				case api.ErrFlood:
+					session.log.Warn("[vk] flood detection alert")
+					utils.Delay(session.ctx, utils.Range{
+						Min: 1 * time.Minute,
+						Max: 1 * time.Hour,
+					})
+				case api.ErrCaptcha:
+					session.log.Warnf("[vk] captcha required: %s %s", e.CaptchaSID, e.CaptchaImg)
+					text, err := bot.Request(session.ctx, "Captcha required", e.CaptchaImg)
+					if err != nil {
+						continue
+					}
+					injectCaptcha(text, e.CaptchaSID, params...)
+
+				case api.ErrRateLimit:
+					session.log.Warn("[vk] request rate limit reached")
+					utils.Delay(session.ctx, utils.Range{
+						Min: 24 * time.Hour,
+						Max: 25 * time.Hour,
+					})
+
+				case api.ErrAuth:
+					session.log.Warn("[vk] auth failed")
+					utils.Delay(session.ctx, utils.Range{
+						Min: 1 * time.Second,
+						Max: 20 * time.Second,
+					})
+					if err = session.signIn(); err != nil {
+						session.raise(err)
+						return resp, err
+					}
+					return resp, err
+				case api.ErrUserDeleted:
+					return resp, nil
+				default:
+					session.raise(err)
+					return resp, err
+				}
+			} else {
+				session.raise(err)
+				return resp, err
+			}
 		}
 	}
 }

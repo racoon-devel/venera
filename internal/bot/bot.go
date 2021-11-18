@@ -75,10 +75,12 @@ func Post(msg *Message) {
 	bot.messageChan <- msg
 }
 
-func Request(ctx context.Context, text string) (string, error) {
+func Request(ctx context.Context, text, image string) (string, error) {
 	timeouted, _ := context.WithTimeout(ctx, requestTimeout)
 	responseChannel := make(chan string)
-	bot.messageChan <- newRequestMessage(timeouted, text, responseChannel)
+	msg := newRequestMessage(timeouted, text, responseChannel)
+	msg.Photo = image
+	bot.messageChan <- msg
 
 	select {
 	case <-timeouted.Done():

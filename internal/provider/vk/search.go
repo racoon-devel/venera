@@ -23,8 +23,7 @@ func (session *searchSession) process(ctx context.Context) {
 
 	session.mutex.Lock()
 	session.status = types.StatusRunning
-	session.api = api.NewVK(session.state.AccessToken)
-	session.api.Limit = api.LimitUserToken
+	session.createApiEngine()
 	session.rater = rater.NewRater(session.state.Search.Rater, "vk", session.log, &session.state.Search.SearchSettings)
 	defer session.rater.Close()
 	session.mutex.Unlock()
@@ -52,13 +51,9 @@ func (session *searchSession) process(ctx context.Context) {
 }
 
 func (session *searchSession) initialize() {
-	var country, city int
-	ok := session.try(func() error {
-		var err error
-		country, city, err = session.getLocationIDs()
-		return err
-	})
-	if !ok {
+	country, city, err := session.getLocationIDs()
+
+	if err != nil {
 		return
 	}
 
@@ -96,13 +91,8 @@ func (session *searchSession) userSearch() {
 
 	session.log.Debugf("[vk] global searching request, offset = %d, reverse sort = %b", state.Offset, state.ReverseSort)
 
-	var resp api.UsersSearchResponse
-	ok := session.try(func() error {
-		var err error
-		resp, err = session.api.UsersSearch(p)
-		return err
-	})
-	if !ok {
+	resp, err := session.api.UsersSearch(p)
+	if err != nil {
 		return
 	}
 
@@ -110,7 +100,7 @@ func (session *searchSession) userSearch() {
 
 	for _, user := range resp.Items {
 		atomic.AddUint32(&state.Offset, 1)
-		session.rateUser(&user)
+		session.rateUser(&user, true)
 	}
 
 	session.mutex.Lock()
@@ -145,13 +135,8 @@ func (session *searchSession) nameUserSearch() {
 
 	session.log.Debugf("[vk] search by name '%s' request, offset = %d, reverse sort = %b", womenNames[state.NameIndex], state.Offset, state.ReverseSort)
 
-	var resp api.UsersSearchResponse
-	ok := session.try(func() error {
-		var err error
-		resp, err = session.api.UsersSearch(p)
-		return err
-	})
-	if !ok {
+	resp, err := session.api.UsersSearch(p)
+	if err != nil {
 		return
 	}
 
@@ -159,7 +144,7 @@ func (session *searchSession) nameUserSearch() {
 
 	for _, user := range resp.Items {
 		atomic.AddUint32(&state.Offset, 1)
-		session.rateUser(&user)
+		session.rateUser(&user, true)
 	}
 
 	session.mutex.Lock()
@@ -189,13 +174,9 @@ func (session *searchSession) groupSearch() {
 	}
 
 	session.log.Debugf("[vk] search groups by '%s' request", session.state.Search.Keywords[state.KeywordIndex])
-	var resp api.GroupsSearchResponse
-	ok := session.try(func() error {
-		var err error
-		resp, err = session.api.GroupsSearch(p)
-		return err
-	})
-	if !ok {
+
+	resp, err := session.api.GroupsSearch(p)
+	if err != nil {
 		return
 	}
 
@@ -240,13 +221,8 @@ func (session *searchSession) searchInGroups() {
 		"group_id":  session.state.GroupSearch.Groups[state.GroupIndex],
 	}
 
-	var resp api.UsersSearchResponse
-	ok := session.try(func() error {
-		var err error
-		resp, err = session.api.UsersSearch(p)
-		return err
-	})
-	if !ok {
+	resp, err := session.api.UsersSearch(p)
+	if err != nil {
 		return
 	}
 
@@ -254,7 +230,7 @@ func (session *searchSession) searchInGroups() {
 
 	for _, user := range resp.Items {
 		atomic.AddUint32(&state.Offset, 1)
-		session.rateUser(&user)
+		session.rateUser(&user, true)
 	}
 
 	session.mutex.Lock()
@@ -283,13 +259,8 @@ func (session *searchSession) freeSearch() {
 		p["user_id"] = userID
 	}
 
-	var resp api.FriendsGetFieldsResponse
-	ok := session.try(func() error {
-		var err error
-		resp, err = session.api.FriendsGetFields(p)
-		return err
-	})
-	if !ok {
+	resp, err := session.api.FriendsGetFields(p)
+	if err != nil {
 		return
 	}
 
@@ -308,7 +279,7 @@ func (session *searchSession) freeSearch() {
 		dbRemove(state.UserID)
 	}
 
-	userID, ok = dbFetchFirst()
+	userID, ok := dbFetchFirst()
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
 
@@ -325,13 +296,8 @@ func (session *searchSession) fetchUser(ID int) {
 		"fields":   searchFields + ",counters",
 	}
 
-	var resp api.UsersGetResponse
-	ok := session.try(func() error {
-		var err error
-		resp, err = session.api.UsersGet(p)
-		return err
-	})
-	if !ok || len(resp) == 0 {
+	resp, err := session.api.UsersGet(p)
+	if err != nil {
 		return
 	}
 
@@ -340,10 +306,10 @@ func (session *searchSession) fetchUser(ID int) {
 		return
 	}
 
-	session.rateUser(&resp[0])
+	session.rateUser(&resp[0], false)
 }
 
-func (session *searchSession) rateUser(u *object.UsersUser) {
+func (session *searchSession) rateUser(u *object.UsersUser, checkFriends bool) {
 	userName := u.FirstName + " " + u.LastName
 	// private-аккануты не годятся
 	if u.IsClosed && !u.CanAccessClosed {
@@ -375,6 +341,22 @@ func (session *searchSession) rateUser(u *object.UsersUser) {
 	// смотрим рейтинг
 	rating := session.rater.Rate(person)
 	if rating > 0 {
+
+		// проверим, а не блогерша ли
+		if checkFriends {
+			p := api.Params{
+				"user_ids": u.ID,
+				"fields":   "counters",
+			}
+
+			resp, err := session.api.UsersGet(p)
+			if err == nil && len(resp) > 0 {
+				if resp[0].Counters.Friends > friendsLimitThreshold {
+					session.log.Warnf("[vk] skip person '%s %s', because friends limit reached [ %d > %d ]", resp[0].FirstName, resp[0].LastName, resp[0].Counters.Friends, friendsLimitThreshold)
+					return
+				}
+			}
+		}
 		if _, err := storage.AppendPerson(person, session.taskID, session.provider.ID()); err != nil {
 			session.log.Errorf("[vk] save person failed: %+v", err)
 		} else {
