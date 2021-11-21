@@ -17,7 +17,7 @@ import (
 	"github.com/racoon-devel/venera/internal/utils"
 )
 
-const version = "1.2"
+const version = "1.3"
 
 func main() {
 	fmt.Printf("Venera Project v%s\n", version)

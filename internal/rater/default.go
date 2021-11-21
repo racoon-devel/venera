@@ -151,6 +151,10 @@ func (r *defaultRater) Threshold(thresholdType int) int {
 	return passThreshold(r.nextRater, thresholdType, threshold)
 }
 
+func (r *defaultRater) NeedPhotos() bool {
+	return passNeedPhotos(r.nextRater, false)
+}
+
 func (r *defaultRater) Close() {
 	propagateClose(r.nextRater)
 }
