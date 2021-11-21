@@ -7,6 +7,7 @@ import (
 	"github.com/racoon-devel/venera/internal/rater"
 	"github.com/racoon-devel/venera/internal/storage"
 	"github.com/racoon-devel/venera/internal/types"
+	"math/rand"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -91,9 +92,18 @@ func (session *searchSession) userSearch() {
 
 	session.log.Debugf("[vk] global searching request, offset = %d, reverse sort = %b", state.Offset, state.ReverseSort)
 
-	resp, err := session.api.UsersSearch(p)
-	if err != nil {
-		return
+	var resp api.UsersSearchResponse
+	var err error
+
+	for {
+		resp, err = session.api.UsersSearch(p)
+		r := session.try(err)
+		if r.isSuccess() {
+			break
+		}
+		if r.isFailed() {
+			return
+		}
 	}
 
 	session.log.Debugf("[vk] found users: %d", len(resp.Items))
@@ -135,9 +145,18 @@ func (session *searchSession) nameUserSearch() {
 
 	session.log.Debugf("[vk] search by name '%s' request, offset = %d, reverse sort = %b", womenNames[state.NameIndex], state.Offset, state.ReverseSort)
 
-	resp, err := session.api.UsersSearch(p)
-	if err != nil {
-		return
+	var resp api.UsersSearchResponse
+	var err error
+
+	for {
+		resp, err = session.api.UsersSearch(p)
+		r := session.try(err)
+		if r.isSuccess() {
+			break
+		}
+		if r.isFailed() {
+			return
+		}
 	}
 
 	session.log.Debugf("[vk] found users: %d", len(resp.Items))
@@ -175,9 +194,18 @@ func (session *searchSession) groupSearch() {
 
 	session.log.Debugf("[vk] search groups by '%s' request", session.state.Search.Keywords[state.KeywordIndex])
 
-	resp, err := session.api.GroupsSearch(p)
-	if err != nil {
-		return
+	var resp api.GroupsSearchResponse
+	var err error
+
+	for {
+		resp, err = session.api.GroupsSearch(p)
+		r := session.try(err)
+		if r.isSuccess() {
+			break
+		}
+		if r.isFailed() {
+			return
+		}
 	}
 
 	session.log.Debugf("[vk] retrieved groups: %d", len(resp.Items))
@@ -221,9 +249,18 @@ func (session *searchSession) searchInGroups() {
 		"group_id":  session.state.GroupSearch.Groups[state.GroupIndex],
 	}
 
-	resp, err := session.api.UsersSearch(p)
-	if err != nil {
-		return
+	var resp api.UsersSearchResponse
+	var err error
+
+	for {
+		resp, err = session.api.UsersSearch(p)
+		r := session.try(err)
+		if r.isSuccess() || r.isNext() {
+			break
+		}
+		if r.isFailed() {
+			return
+		}
 	}
 
 	session.log.Debugf("[vk] found users: %d", len(resp.Items))
@@ -259,14 +296,28 @@ func (session *searchSession) freeSearch() {
 		p["user_id"] = userID
 	}
 
-	resp, err := session.api.FriendsGetFields(p)
-	if err != nil {
-		return
+	var resp api.FriendsGetFieldsResponse
+	var err error
+
+	for {
+		resp, err = session.api.FriendsGetFields(p)
+		r := session.try(err)
+		if r.isSuccess() {
+			break
+		}
+		if r.isFailed() {
+			return
+		}
 	}
 
 	session.log.Debugf("[vk] friends fetched: %d", len(resp.Items))
+	dest := make([]object.FriendsUserXtrLists, len(resp.Items))
+	perm := rand.Perm(len(resp.Items))
+	for i, v := range perm {
+		dest[v] = resp.Items[i]
+	}
 
-	for _, friend := range resp.Items {
+	for _, friend := range dest {
 		if !friend.IsClosed && friend.City.ID == session.state.CommonData.CityID {
 			if session.isRateableUser(&friend.UsersUser) && !dbContains(friend.ID) {
 				session.fetchUser(friend.ID)
@@ -296,9 +347,18 @@ func (session *searchSession) fetchUser(ID int) {
 		"fields":   searchFields + ",counters",
 	}
 
-	resp, err := session.api.UsersGet(p)
-	if err != nil {
-		return
+	var resp api.UsersGetResponse
+	var err error
+
+	for {
+		resp, err = session.api.UsersGet(p)
+		r := session.try(err)
+		if r.isSuccess() {
+			break
+		}
+		if r.isFailed() || r.isNext() {
+			return
+		}
 	}
 
 	if resp[0].Counters.Friends >= friendsLimitThreshold {
@@ -349,13 +409,18 @@ func (session *searchSession) rateUser(u *object.UsersUser, checkFriends bool) {
 				"fields":   "counters",
 			}
 
-			resp, err := session.api.UsersGet(p)
-			if err == nil && len(resp) > 0 {
+			var resp api.UsersGetResponse
+			var err error
+
+			resp, err = session.api.UsersGet(p)
+			r := session.try(err)
+			if r.isSuccess() {
 				if resp[0].Counters.Friends > friendsLimitThreshold {
 					session.log.Warnf("[vk] skip person '%s %s', because friends limit reached [ %d > %d ]", resp[0].FirstName, resp[0].LastName, resp[0].Counters.Friends, friendsLimitThreshold)
 					return
 				}
 			}
+
 		}
 		if _, err := storage.AppendPerson(person, session.taskID, session.provider.ID()); err != nil {
 			session.log.Errorf("[vk] save person failed: %+v", err)

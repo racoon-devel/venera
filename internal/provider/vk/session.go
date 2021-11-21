@@ -52,9 +52,12 @@ func (session *searchSession) Reset() {
 
 	session.state.State = stateInitialize
 	session.state.UserSearch = userSearch{}
+	session.state.NameUserSearch = nameUserSearch{}
 	session.state.GroupSearch = groupSearch{}
 	session.state.InGroupSearch = inGroupSearch{}
+	session.state.FreeSearch = freeSearch{}
 	session.state.LastAuthTime = time.Time{}
+	session.state.AccessToken = ""
 
 	atomic.StoreUint32(&session.state.Stat.Errors, 0)
 	atomic.StoreUint32(&session.state.Stat.Saved, 0)

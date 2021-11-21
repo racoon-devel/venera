@@ -33,6 +33,8 @@ func (session *searchSession) createApiEngine() {
 	session.api = api.NewVK(session.state.AccessToken)
 	session.api.Limit = api.LimitUserToken
 	defaultHandler := session.api.Handler
+
+	// обрабатываем общие ошибки, которые не затрагивают состояние сессии
 	session.api.Handler = func(method string, params ...api.Params) (api.Response, error) {
 		for {
 			var e *api.Error
@@ -42,17 +44,20 @@ func (session *searchSession) createApiEngine() {
 			}
 			if errors.As(err, &e) {
 				switch e.Code {
+
 				case api.ErrTooMany:
 					utils.Delay(session.ctx, utils.Range{
 						Min: time.Second,
 						Max: 2 * time.Second,
 					})
+
 				case api.ErrFlood:
-					session.log.Warn("[vk] flood detection alert")
+					session.log.Warn("[vk] flood detection alert, waiting...")
 					utils.Delay(session.ctx, utils.Range{
 						Min: 1 * time.Minute,
 						Max: 1 * time.Hour,
 					})
+
 				case api.ErrCaptcha:
 					session.log.Warnf("[vk] captcha required: %s %s", e.CaptchaSID, e.CaptchaImg)
 					text, err := bot.Request(session.ctx, "Captcha required", e.CaptchaImg)
@@ -68,29 +73,63 @@ func (session *searchSession) createApiEngine() {
 						Max: 25 * time.Hour,
 					})
 
-				case api.ErrAuth:
-					session.log.Warn("[vk] auth failed")
-					utils.Delay(session.ctx, utils.Range{
-						Min: 1 * time.Second,
-						Max: 20 * time.Second,
-					})
-					if err = session.signIn(); err != nil {
-						session.raise(err)
-						return resp, err
-					}
-					return resp, err
-				case api.ErrUserDeleted:
-					return resp, nil
 				default:
-					session.raise(err)
 					return resp, err
 				}
 			} else {
-				session.raise(err)
 				return resp, err
 			}
 		}
 	}
+}
+
+type tryResult int
+
+const (
+	trySuccess = iota
+	tryRepeat
+	tryNext
+	tryFailed
+)
+
+func (r tryResult) isSuccess() bool {
+	return r == trySuccess
+}
+
+func (r tryResult) isRepeat() bool {
+	return r == tryRepeat
+}
+
+func (r tryResult) isNext() bool {
+	return r == tryNext
+}
+
+func (r tryResult) isFailed() bool {
+	return r == tryFailed
+}
+
+func (session *searchSession) try(err error) tryResult {
+	if err == nil {
+		return trySuccess
+	}
+	var e *api.Error
+	if errors.As(err, &e) {
+		switch e.Code {
+		case api.ErrPermission:
+			return tryNext
+		case api.ErrUserDeleted:
+			return tryNext
+		case api.ErrAuth:
+			session.log.Warnf("[vk] auth required")
+			err = session.signIn()
+			if err == nil {
+				return tryRepeat
+			}
+		}
+	}
+
+	session.raise(err)
+	return tryFailed
 }
 
 func (session *searchSession) checkAuth() error {
@@ -106,10 +145,18 @@ func (session *searchSession) getLocationIDs() (countryID, cityID int, err error
 		"code":  "RU",
 		"count": 10,
 	}
-	countries, err := session.api.DatabaseGetCountries(p)
-	if err != nil {
-		return
+	var countries api.DatabaseGetCountriesResponse
+	for {
+		countries, err = session.api.DatabaseGetCountries(p)
+		r := session.try(err)
+		if r.isSuccess() {
+			break
+		}
+		if r.isFailed() {
+			return
+		}
 	}
+
 	if countries.Count == 0 {
 		err = errors.New("cannot get country ID")
 		return
@@ -120,10 +167,18 @@ func (session *searchSession) getLocationIDs() (countryID, cityID int, err error
 		"q":          session.state.Search.City,
 		"country_id": strconv.Itoa(countryID),
 	}
-	cities, err := session.api.DatabaseGetCities(p)
-	if err != nil {
-		return
+	var cities api.DatabaseGetCitiesResponse
+	for {
+		cities, err = session.api.DatabaseGetCities(p)
+		r := session.try(err)
+		if r.isSuccess() {
+			break
+		}
+		if r.isFailed() {
+			return
+		}
 	}
+
 	if cities.Count == 0 {
 		err = errors.New("cannot get city ID")
 		return
